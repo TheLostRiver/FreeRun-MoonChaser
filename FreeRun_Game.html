@@ -30,6 +30,18 @@
             z-index: 500; cursor: pointer; pointer-events: auto;
         }
 
+        /* 暂停按钮 (新功能) */
+        #pause-btn {
+            position: absolute; top: 20px; left: 130px; /* 放在语言按钮右边 */
+            background: rgba(230, 126, 34, 0.8); color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            width: 40px; height: 40px; border-radius: 50%;
+            font-weight: bold; font-size: 18px; line-height: 36px; text-align: center;
+            z-index: 500; cursor: pointer; pointer-events: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #pause-btn:hover { background: #d35400; }
+
         /* HUD 数据面板 */
         #hud-panel {
             position: absolute; top: 20px; right: 20px;
@@ -78,14 +90,10 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(25, 25, 112, 0.4); backdrop-filter: blur(4px);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: auto; z-index: 150;
+            pointer-events: auto; transition: opacity 0.3s; z-index: 150;
             cursor: default;
         }
-
-        /* --- 核心修复：彻底隐藏，防止隐形按钮阻挡点击 --- */
-        .hidden { 
-            display: none !important; 
-        }
+        .hidden { display: none !important; }
 
         .game-title {
             font-family: 'Titan One', 'Noto Sans SC', sans-serif;
@@ -106,6 +114,24 @@
         .rank-btn-style { background-color: #f39c12; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #d35400; margin-bottom: 20px; }
         .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
         .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
+        
+        /* 暂停菜单样式 (新设计) */
+        #pause-screen { z-index: 400; background: rgba(0, 0, 0, 0.6); }
+        .pause-container {
+            background: rgba(20, 20, 50, 0.9); padding: 40px 60px;
+            border-radius: 20px; border: 3px solid #00FFFF;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            text-align: center;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        .pause-title {
+            font-family: 'Titan One', 'Noto Sans SC'; font-size: 48px; color: white;
+            text-shadow: 0 0 10px #00FFFF; margin-bottom: 10px;
+        }
+        .resume-btn-style {
+            background-color: #2ecc71; color: white; font-size: 24px; padding: 10px 40px;
+            border-radius: 30px; box-shadow: 0 5px 0 #27ae60;
+        }
 
         /* Store UI */
         #store-screen { z-index: 250; }
@@ -202,6 +228,7 @@
 
     <div id="ui-layer">
         <button id="lang-btn" class="btn-3d">CN / EN</button>
+        <div id="pause-btn" class="hidden" onclick="togglePause(event)">II</div>
 
         <div id="hud-panel" class="hidden">
             <div id="score-display">000000</div>
@@ -237,6 +264,14 @@
             </div>
 
             <div id="controls-hint"></div>
+        </div>
+
+        <div id="pause-screen" class="menu-screen hidden">
+            <div class="pause-container">
+                <div id="pause-title" class="pause-title">PAUSED</div>
+                <button id="resume-btn" class="btn-3d resume-btn-style" onclick="togglePause(event)">RESUME</button>
+                <button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN MENU</button>
+            </div>
         </div>
 
         <div id="store-screen" class="menu-screen hidden">
@@ -318,7 +353,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V8 - Ghost Click Fix via display:none)
+ * FREE RUN: MOON CHASER (V9 - With Pause Functionality)
  */
 
 const CONFIG = {
@@ -372,7 +407,8 @@ const LANG = {
         rankBtn: "LEADERBOARD", lbTitle: "TOP RUNNERS", lbRank: "RANK", lbName: "NAME", lbScore: "SCORE", lbTime: "TIME", lbClose: "CLOSE", lbPlaceholder: "Enter Name", lbSave: "SAVE & RETRY", lbNoRecord: "No records yet.",
         storeBtn: "SUPPLY STORE", storeTitle: "SUPPLY STORE", storeBack: "BACK",
         itemNameMag: "Magnet Start", itemDescMag: "Start run with Magnet", itemOwn: "Owned: ", autoUse: "Auto-Use",
-        itemNameJet: "Jetpack Start", itemDescJet: "Start run with Jetpack"
+        itemNameJet: "Jetpack Start", itemDescJet: "Start run with Jetpack",
+        pauseTitle: "PAUSED", resume: "RESUME", pauseMenu: "MAIN MENU"
     },
     cn: {
         title: "自由奔跑<br>逐月者",
@@ -381,7 +417,8 @@ const LANG = {
         rankBtn: "排行榜", lbTitle: "顶级奔跑者", lbRank: "排名", lbName: "名字", lbScore: "分数", lbTime: "时长", lbClose: "关闭", lbPlaceholder: "输入名字", lbSave: "保存并重试", lbNoRecord: "暂无记录，快去玩一把！",
         storeBtn: "补给商店", storeTitle: "补给商店", storeBack: "返回",
         itemNameMag: "开局磁铁", itemDescMag: "开局自动激活磁铁", itemOwn: "拥有: ", autoUse: "自动使用",
-        itemNameJet: "开局飞行", itemDescJet: "开局自动使用喷气背包"
+        itemNameJet: "开局飞行", itemDescJet: "开局自动使用喷气背包",
+        pauseTitle: "游戏暂停", resume: "继续游戏", pauseMenu: "返回主菜单"
     }
 };
 let currentLang = 'en';
@@ -389,6 +426,7 @@ let currentLang = 'en';
 let scene, camera, renderer, clock;
 let player;
 let gameActive = false;
+let isPaused = false; // 新增暂停状态
 let score = 0, coins = 0, distance = 0, survivalTime = 0;
 let speed = CONFIG.PLAYER_SPEED_BASE;
 
@@ -617,6 +655,7 @@ function startGame(e) {
     
     magnetActive = false; magnetTimer = 0;
     jetpackActive = false; jetpackTimer = 0;
+    isPaused = false; // 重置暂停状态
     document.getElementById('magnet-status').classList.remove('active');
     document.getElementById('jetpack-status').classList.remove('active');
     
@@ -638,6 +677,7 @@ function startGame(e) {
 
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('pause-btn').classList.remove('hidden'); // 显示暂停按钮
     document.getElementById('hud-panel').classList.remove('hidden');
 }
 window.startGame = startGame;
@@ -646,7 +686,8 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = clock.getDelta();
 
-    if (gameActive) {
+    // 暂停逻辑：如果暂停，则不更新游戏状态
+    if (gameActive && !isPaused) {
         const moveDist = speed * delta;
         player.position.z -= moveDist;
         distance += moveDist;
@@ -809,11 +850,33 @@ function closeStore(e) {
 }
 window.closeStore = closeStore;
 
+function togglePause(e) {
+    if(e && e.stopPropagation) e.stopPropagation();
+    if (!gameActive) return;
+    isPaused = !isPaused;
+    
+    if (isPaused) {
+        document.getElementById('pause-screen').classList.remove('hidden');
+        document.getElementById('pause-btn').classList.add('hidden'); // 暂停时隐藏按钮
+    } else {
+        document.getElementById('pause-screen').classList.add('hidden');
+        document.getElementById('pause-btn').classList.remove('hidden');
+        // 恢复时重置 Delta，防止瞬移
+        clock.getDelta(); 
+    }
+}
+window.togglePause = togglePause;
+
 function goHome(e) {
     if(e && e.stopPropagation) e.stopPropagation();
     gameActive = false;
+    isPaused = false; // 确保不处于暂停状态
     document.getElementById('game-over').classList.add('hidden');
+    document.getElementById('pause-screen').classList.add('hidden');
+    document.getElementById('pause-btn').classList.add('hidden');
+    document.getElementById('hud-panel').classList.add('hidden'); // 回主菜单隐藏HUD
     document.getElementById('main-menu').classList.remove('hidden');
+    
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
     camera.position.set(0, 4, 10); 
     camera.rotation.set(-0.1, 0, 0); 
@@ -856,6 +919,7 @@ function updateHUD() {
 function gameOver() {
     gameActive = false;
     document.getElementById('hud-panel').classList.add('hidden');
+    document.getElementById('pause-btn').classList.add('hidden');
     document.getElementById('game-over').classList.remove('hidden');
     document.getElementById('final-score-val').innerText = score;
     camera.lookAt(player.position);
@@ -888,16 +952,40 @@ function updateLocalization() {
     document.getElementById('item-name-jet').innerText = t.itemNameJet;
     document.getElementById('item-desc-jet').innerText = t.itemDescJet;
     document.getElementById('auto-use-jet').innerText = t.autoUse;
+    
+    // 暂停菜单本地化
+    document.getElementById('pause-title').innerText = t.pauseTitle;
+    document.getElementById('resume-btn').innerText = t.resume;
+    document.getElementById('pause-home-btn').innerText = t.pauseMenu;
+
     if(!document.getElementById('leaderboard-screen').classList.contains('hidden')) Leaderboard.render();
     if(!document.getElementById('store-screen').classList.contains('hidden')) Store.updateUI();
 }
 
 function setupInputs() {
-    document.addEventListener('keydown', e => { if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault(); if(!gameActive) return; if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') { if(targetLane>0) targetLane--; } if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') { if(targetLane<2) targetLane++; } if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ') { if(!isJumping&&!jetpackActive) { isJumping=true; verticalVelocity=CONFIG.JUMP_FORCE; isSliding=false; player.scale.y=1; } } if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') { if(!isJumping&&!jetpackActive) { isSliding=true; slideTimer=0.8; verticalVelocity=-0.5; } } });
+    document.addEventListener('keydown', e => { 
+        // 暂停时禁止操作
+        if (isPaused) return;
+        
+        if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault(); 
+        if(!gameActive) return; 
+        if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') { if(targetLane>0) targetLane--; } 
+        if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') { if(targetLane<2) targetLane++; } 
+        if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ') { if(!isJumping&&!jetpackActive) { isJumping=true; verticalVelocity=CONFIG.JUMP_FORCE; isSliding=false; player.scale.y=1; } } 
+        if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') { if(!isJumping&&!jetpackActive) { isSliding=true; slideTimer=0.8; verticalVelocity=-0.5; } } 
+        // ESC键暂停
+        if(e.key === 'Escape') togglePause();
+    });
+    
     let tx=0, ty=0;
     document.addEventListener('touchstart', e=>{tx=e.changedTouches[0].screenX; ty=e.changedTouches[0].screenY;}, {passive:false});
     document.addEventListener('touchmove', e=>{if(gameActive)e.preventDefault();}, {passive:false});
-    document.addEventListener('touchend', e=>{ if(!gameActive) return; const dx=e.changedTouches[0].screenX-tx, dy=e.changedTouches[0].screenY-ty; if(Math.abs(dx)>Math.abs(dy)) { if(Math.abs(dx)>30) dx>0?(targetLane<2&&targetLane++):(targetLane>0&&targetLane--); } else { if(Math.abs(dy)>30) dy<0?(!isJumping&&!jetpackActive&&(isJumping=true,verticalVelocity=CONFIG.JUMP_FORCE,isSliding=false,player.scale.y=1)):(!jetpackActive&&(isSliding=true,slideTimer=0.8,verticalVelocity=-0.5)); } });
+    document.addEventListener('touchend', e=>{ 
+        if(!gameActive || isPaused) return; 
+        const dx=e.changedTouches[0].screenX-tx, dy=e.changedTouches[0].screenY-ty; 
+        if(Math.abs(dx)>Math.abs(dy)) { if(Math.abs(dx)>30) dx>0?(targetLane<2&&targetLane++):(targetLane>0&&targetLane--); } 
+        else { if(Math.abs(dy)>30) dy<0?(!isJumping&&!jetpackActive&&(isJumping=true,verticalVelocity=CONFIG.JUMP_FORCE,isSliding=false,player.scale.y=1)):(!jetpackActive&&(isSliding=true,slideTimer=0.8,verticalVelocity=-0.5)); } 
+    });
 }
 
 function setupUI() {
