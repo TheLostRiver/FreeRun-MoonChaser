@@ -121,7 +121,6 @@
         .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
         .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
         
-        /* 暂停菜单样式 */
         #pause-screen { z-index: 400; background: rgba(0, 0, 0, 0.6); }
         .pause-container {
             background: rgba(20, 20, 50, 0.9); padding: 40px 60px;
@@ -138,7 +137,6 @@
             border-radius: 30px; box-shadow: 0 5px 0 #27ae60;
         }
 
-        /* Store UI */
         #store-screen { z-index: 250; }
         .store-container {
             background: rgba(10, 10, 40, 0.95); padding: 25px;
@@ -193,20 +191,53 @@
             text-shadow: 2px 2px 0 #000; display: flex; align-items: center; gap: 5px;
         }
 
+        /* --- V19 UI 美化核心部分 --- */
         #controls-hint {
-            margin-top: 30px; background: rgba(0,0,0,0.3); padding: 15px 25px;
-            border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column; gap: 12px; align-items: center;
+            margin-top: 30px; 
+            background: rgba(10, 10, 30, 0.85); /* 深色背景 */
+            padding: 20px 30px;
+            border-radius: 20px; 
+            border: 2px solid rgba(0, 255, 255, 0.3); /* 青色微光边框 */
+            display: flex; flex-direction: column; gap: 15px; align-items: center;
             pointer-events: none;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
         }
-        .control-row { display: flex; align-items: center; gap: 15px; color: #eee; font-weight: bold; text-shadow: 1px 1px 2px black; }
+        .control-row { 
+            display: flex; align-items: center; gap: 15px; 
+            color: #fff; font-weight: bold; font-size: 14px;
+            font-family: 'Titan One', sans-serif;
+            text-shadow: 1px 1px 2px black; 
+        }
+        
+        /* 机械键盘风格按键 */
         .key-cap {
-            display: inline-block; min-width: 24px; height: 24px;
-            background: linear-gradient(to bottom, #fdfdfd, #e0e0e0); color: #333;
-            font-family: Arial, sans-serif; font-weight: 900; line-height: 24px; text-align: center;
-            padding: 4px 8px; border-radius: 6px; border-bottom: 4px solid #999;
+            display: inline-block; min-width: 32px; height: 32px;
+            background: #222; /* 深灰键帽 */
+            color: #eee;
+            font-family: 'Segoe UI', sans-serif; font-weight: 900; line-height: 30px; text-align: center;
+            padding: 0 8px; border-radius: 6px;
+            border-bottom: 4px solid #000; /* 立体感 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            transform: translateY(0);
         }
-        .control-label { font-family: 'Titan One', 'Noto Sans SC'; color: #FFD700; font-size: 14px; }
+        
+        /* 按键颜色编码 */
+        .key-move { border-bottom-color: #008B8B; color: #00FFFF; } /* 青色-移动 */
+        .key-jump { border-bottom-color: #B8860B; color: #FFD700; } /* 黄色-跳跃 */
+        .key-roll { border-bottom-color: #8B008B; color: #FF00FF; } /* 紫色-翻滚 */
+        
+        .control-label { 
+            color: #ddd; font-size: 12px; letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .swipe-hint {
+            display: flex; align-items: center; gap: 8px;
+            color: #aaa; font-size: 12px; font-style: italic; margin-top: 5px;
+        }
+        .swipe-icon { font-size: 16px; }
+
         
         #leaderboard-screen { z-index: 200; }
         .leaderboard-container {
@@ -360,7 +391,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V18 - Perfect Camera Angle)
+ * FREE RUN: MOON CHASER (V19 - UI Facelift)
  */
 
 const CONFIG = {
@@ -512,7 +543,20 @@ const LANG = {
     en: {
         title: "FREE RUN<br>MOON CHASER",
         play: "TAP TO PLAY", crashed: "CRASHED!", score: "SCORE", tryAgain: "TRY AGAIN", mainMenu: "MAIN MENU",
-        controls: `<div class="control-row"><div><span class="key-cap">←</span> <span class="key-cap">→</span></div><span class="control-label">MOVE</span></div><div class="control-row"><div><span class="key-cap">↑</span></div><span class="control-label">JUMP</span><div style="width:10px"></div><div><span class="key-cap">↓</span></div><span class="control-label">ROLL</span></div><div class="swipe-hint">(Or Swipe on Screen)</div>`,
+        controls: `
+            <div class="control-row">
+                <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
+                <span class="control-label">MOVE</span>
+            </div>
+            <div class="control-row">
+                <div><span class="key-cap key-jump">↑</span></div>
+                <span class="control-label">JUMP</span>
+                <div style="width:15px"></div>
+                <div><span class="key-cap key-roll">↓</span></div>
+                <span class="control-label">ROLL</span>
+            </div>
+            <div class="swipe-hint"><span class="swipe-icon">👆</span> (Swipe on Screen)</div>
+        `,
         rankBtn: "LEADERBOARD", lbTitle: "TOP RUNNERS", lbRank: "RANK", lbName: "NAME", lbScore: "SCORE", lbTime: "TIME", lbClose: "CLOSE", lbPlaceholder: "Enter Name", lbSave: "SAVE & RETRY", lbNoRecord: "No records yet.",
         storeBtn: "SUPPLY STORE", storeTitle: "SUPPLY STORE", storeBack: "BACK",
         itemNameMag: "Magnet Start", itemDescMag: "Start run with Magnet", itemOwn: "Owned: ", autoUse: "Auto-Use",
@@ -522,7 +566,20 @@ const LANG = {
     cn: {
         title: "自由奔跑<br>逐月者",
         play: "点击开始", crashed: "撞击!", score: "最终得分", tryAgain: "再来一次", mainMenu: "返回主菜单",
-        controls: `<div class="control-row"><div><span class="key-cap">←</span> <span class="key-cap">→</span></div><span class="control-label">左右变道</span></div><div class="control-row"><div><span class="key-cap">↑</span></div><span class="control-label">跳跃</span><div style="width:10px"></div><div><span class="key-cap">↓</span></div><span class="control-label">翻滚</span></div><div class="swipe-hint">(手机端支持滑动操作)</div>`,
+        controls: `
+            <div class="control-row">
+                <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
+                <span class="control-label">左右变道</span>
+            </div>
+            <div class="control-row">
+                <div><span class="key-cap key-jump">↑</span></div>
+                <span class="control-label">跳跃</span>
+                <div style="width:15px"></div>
+                <div><span class="key-cap key-roll">↓</span></div>
+                <span class="control-label">翻滚</span>
+            </div>
+            <div class="swipe-hint"><span class="swipe-icon">👆</span> (手机端支持滑动操作)</div>
+        `,
         rankBtn: "排行榜", lbTitle: "顶级奔跑者", lbRank: "排名", lbName: "名字", lbScore: "分数", lbTime: "时长", lbClose: "关闭", lbPlaceholder: "输入名字", lbSave: "保存并重试", lbNoRecord: "暂无记录，快去玩一把！",
         storeBtn: "补给商店", storeTitle: "补给商店", storeBack: "返回",
         itemNameMag: "开局磁铁", itemDescMag: "开局自动激活磁铁", itemOwn: "拥有: ", autoUse: "自动使用",
