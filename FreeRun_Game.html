@@ -353,7 +353,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V11 - Enhanced City Environment)
+ * FREE RUN: MOON CHASER (V12 - Realistic & Moving Trains)
  */
 
 const CONFIG = {
@@ -444,8 +444,9 @@ let verticalVelocity = 0, slideTimer = 0;
 let magnetActive = false, magnetTimer = 0;
 let jetpackActive = false, jetpackTimer = 0; 
 
-// Building Materials Cache
+// Building & Train Materials
 let buildingMaterials = [];
+let trainBodyMat, trainWindowMat, trainWheelMat;
 
 function init() {
     document.getElementById('loading').style.display = 'none';
@@ -469,7 +470,8 @@ function init() {
     dir.shadow.camera.near = 0.5; dir.shadow.camera.far = 100;
     scene.add(dir);
     
-    createBuildingMaterials(); // Initialize procedural textures
+    createBuildingMaterials();
+    createTrainMaterials(); // New Train Materials
     createEnvironment();
     createPlayerModel();
     setupInputs();
@@ -478,43 +480,57 @@ function init() {
     animate();
 }
 
-// --- PROCEDURAL TEXTURES (The "Better Buildings" Magic) ---
 function createBuildingMaterials() {
-    const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22]; // Green, Blue, Purple, Yellow, Orange
-    
+    const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22];
     colors.forEach(col => {
-        // Create a canvas for the window pattern
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 64;
         const ctx = canvas.getContext('2d');
-        
-        // Base Wall
         ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
         ctx.fillRect(0, 0, 64, 64);
-        
-        // Windows (Lit)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Glowing window
-        // Draw 2x4 grid of windows
-        for(let y=10; y<64; y+=16) {
-            for(let x=8; x<64; x+=16) {
-                if(Math.random() > 0.3) { // Randomly turn lights off
-                    ctx.fillRect(x, y, 8, 10);
-                }
-            }
-        }
-        
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.magFilter = THREE.NearestFilter; // Sharp pixels for retro look
-        
-        const mat = new THREE.MeshPhongMaterial({ 
-            map: texture,
-            color: 0xaaaaaa, // Slight dimming
-            emissive: col,
-            emissiveIntensity: 0.2, // Neon glow
-            shininess: 30
-        });
-        buildingMaterials.push(mat);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        for(let y=10; y<64; y+=16) { for(let x=8; x<64; x+=16) { if(Math.random() > 0.3) ctx.fillRect(x, y, 8, 10); } }
+        const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
+        buildingMaterials.push(new THREE.MeshPhongMaterial({ map: texture, color: 0xaaaaaa, emissive: col, emissiveIntensity: 0.2, shininess: 30 }));
     });
+}
+
+// --- NEW TRAIN MATERIALS & MODEL ---
+function createTrainMaterials() {
+    trainBodyMat = new THREE.MeshPhongMaterial({ color: 0x34495e, shininess: 80, reflectivity: 0.5 }); // Dark metallic blue
+    
+    // Train windows - simpler horizontal strips
+    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 32;
+    const ctx = canvas.getContext('2d'); ctx.fillStyle = '#f1c40f'; ctx.fillRect(0, 5, 64, 22); // Yellow strip
+    const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
+    trainWindowMat = new THREE.MeshBasicMaterial({ map: texture, color: 0xffffff });
+
+    trainWheelMat = new THREE.MeshLambertMaterial({ color: 0x111111 }); // Dark rubber/metal
+}
+
+function createTrainModel(isMoving) {
+    const group = new THREE.Group();
+    // Main Body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.5, 18), trainBodyMat);
+    body.position.y = 2.25; body.castShadow = true; group.add(body);
+    // Windows
+    const windows = new THREE.Mesh(new THREE.BoxGeometry(2.65, 1.0, 16), trainWindowMat);
+    windows.position.y = 3.0; group.add(windows);
+    // Wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 3, 16); wheelGeo.rotateZ(Math.PI / 2);
+    [-6, -2, 2, 6].forEach(z => {
+        const axle = new THREE.Mesh(wheelGeo, trainWheelMat);
+        axle.position.set(0, 0.6, z); axle.castShadow = true; group.add(axle);
+    });
+    // Headlight for moving trains
+    if (isMoving) {
+        const lightGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16); lightGeo.rotateX(Math.PI / 2);
+        const lightMesh = new THREE.Mesh(lightGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 }));
+        lightMesh.position.set(0, 2, 9.1); group.add(lightMesh);
+    }
+    group.userData.isObstacle = true;
+    if (isMoving) { group.userData.isMovingTrain = true; group.userData.trainSpeed = 35; } // Incoming speed
+    return group;
 }
 
 function createPlayerModel() {
@@ -622,31 +638,23 @@ function createTrackSegment(zPos) {
     activeTracks.push(seg);
 }
 
-// --- NEW BUILDING GENERATION ---
 function spawnBuilding(zPos) {
     // Left Side Building
-    const h1 = 15 + Math.random() * 30; // Random Height 15-45
-    const w1 = 5 + Math.random() * 5;   // Random Width 5-10
-    const d1 = 5 + Math.random() * 5;   // Random Depth
+    const h1 = 15 + Math.random() * 30; const w1 = 5 + Math.random() * 5; const d1 = 5 + Math.random() * 5;
     const mat1 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
-    
     const b1 = new THREE.Mesh(new THREE.BoxGeometry(w1, h1, d1), mat1);
-    b1.position.set(-12 - (w1/2), h1/2 - 5, zPos); // Adjusted position based on width
-    b1.castShadow = true; b1.receiveShadow = true;
+    b1.position.set(-12 - (w1/2), h1/2 - 5, zPos); b1.castShadow = true; b1.receiveShadow = true;
     scene.add(b1); activeDecorations.push(b1);
 
     // Right Side Building
-    const h2 = 15 + Math.random() * 30;
-    const w2 = 5 + Math.random() * 5;
-    const d2 = 5 + Math.random() * 5;
+    const h2 = 15 + Math.random() * 30; const w2 = 5 + Math.random() * 5; const d2 = 5 + Math.random() * 5;
     const mat2 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
-
     const b2 = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), mat2);
-    b2.position.set(12 + (w2/2), h2/2 - 5, zPos);
-    b2.castShadow = true; b2.receiveShadow = true;
+    b2.position.set(12 + (w2/2), h2/2 - 5, zPos); b2.castShadow = true; b2.receiveShadow = true;
     scene.add(b2); activeDecorations.push(b2);
 }
 
+// --- UPDATED OBSTACLE SPAWNING WITH TRAINS ---
 function spawnObstacle(zPos) {
     if (jetpackActive) { for(let i=0; i<3; i++) spawnCoins(CONFIG.LANES[i], zPos, CONFIG.JETPACK_HEIGHT); }
     const rand = Math.random();
@@ -658,25 +666,27 @@ function spawnObstacle(zPos) {
         const jet = createJetpackModel(); jet.position.set(laneX, 1.0, zPos); scene.add(jet); activeJetpacks.push(jet);
     } else {
         let mesh;
-        if (rand < 0.5) {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 3.5, 14), new THREE.MeshPhongMaterial({ color: 0x2C3E50 }));
-            mesh.position.set(laneX, 1.75, zPos);
-            const win = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1, 0.1), new THREE.MeshBasicMaterial({ color: 0x3498DB }));
-            win.position.set(0, 0.5, 7.01); mesh.add(win);
-        } else if (rand < 0.75) {
+        const obstacleType = Math.random();
+        if (obstacleType < 0.3) {
+            // 30% Incoming Moving Train (Spawns further back to give reaction time)
+            mesh = createTrainModel(true); mesh.position.set(laneX, 0, zPos - 50);
+        } else if (obstacleType < 0.6) {
+            // 30% Static Parked Train
+            mesh = createTrainModel(false); mesh.position.set(laneX, 0, zPos);
+        } else if (obstacleType < 0.8) {
+            // 20% High Barrier
             const group = new THREE.Group();
             const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 0.2), new THREE.MeshLambertMaterial({color:0x7F8C8D}));
-            const p1=pole.clone(); p1.position.set(-1.2, 1.5, 0);
-            const p2=pole.clone(); p2.position.set(1.2, 1.5, 0);
+            const p1=pole.clone(); p1.position.set(-1.2, 1.5, 0); const p2=pole.clone(); p2.position.set(1.2, 1.5, 0);
             const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1, 0.2), new THREE.MeshLambertMaterial({color:0x27AE60}));
-            bar.position.set(0, 2.5, 0);
-            group.add(p1, p2, bar); group.position.set(laneX, 0, zPos);
+            bar.position.set(0, 2.5, 0); group.add(p1, p2, bar); group.position.set(laneX, 0, zPos);
             mesh = group; mesh.userData.isHigh = true;
         } else {
+            // 20% Low Barrier
             mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.5), new THREE.MeshLambertMaterial({color:0xE67E22}));
             mesh.position.set(laneX, 0.4, zPos);
         }
-        mesh.castShadow = true; mesh.receiveShadow = true;
+        if(mesh.isMesh) { mesh.castShadow = true; mesh.receiveShadow = true; }
         scene.add(mesh); activeObstacles.push(mesh);
     }
     if (!jetpackActive) { const coinLane = (laneIdx + 1) % 3; spawnCoins(CONFIG.LANES[coinLane], zPos, 0.8); }
@@ -754,6 +764,14 @@ function animate() {
 
             const tx = CONFIG.LANES[targetLane];
             player.position.x += (tx - player.position.x) * 10 * delta;
+
+            // --- MOVE INCOMING TRAINS ---
+            activeObstacles.forEach(obs => {
+                if (obs.userData.isMovingTrain) {
+                    // Move towards player (positive Z direction relative to world)
+                    obs.position.z += obs.userData.trainSpeed * delta;
+                }
+            });
             
             if (jetpackActive) {
                 jetpackTimer -= delta;
