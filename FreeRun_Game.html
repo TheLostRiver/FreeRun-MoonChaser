@@ -30,7 +30,7 @@
             z-index: 500; cursor: pointer; pointer-events: auto;
         }
         #lang-btn { left: 20px; }
-        #sound-btn { left: 120px; width: 40px; text-align: center; padding: 8px 0; } /* 音效开关 */
+        #sound-btn { left: 120px; width: 40px; text-align: center; padding: 8px 0; }
 
         #pause-btn {
             position: absolute; top: 20px; left: 180px; 
@@ -68,6 +68,14 @@
             margin-right: 8px; box-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
         }
         #coin-display { font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px 0 #000; }
+        
+        /* 新增：倍率显示 */
+        #coin-multiplier {
+            font-size: 16px; font-weight: 900; font-family: monospace;
+            color: #00FFFF; margin-left: 8px; font-style: italic;
+            text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+        }
+
         #speed-indicator {
             font-family: 'Titan One', monospace; color: #00FFFF; font-size: 18px; 
             text-shadow: 1px 1px 0 #000; margin-bottom: 10px; font-style: italic;
@@ -233,6 +241,7 @@
             <div class="coin-container">
                 <div class="css-coin"></div>
                 <div id="coin-display">0</div>
+                <span id="coin-multiplier">x1</span>
             </div>
             
             <div id="status-bars">
@@ -350,7 +359,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V14 - Audio System Added)
+ * FREE RUN: MOON CHASER (V15 - Coin Multiplier System)
  */
 
 const CONFIG = {
@@ -368,14 +377,13 @@ const CONFIG = {
     COST_MAGNET: 100,
     COST_JETPACK: 200,
     INITIAL_COINS: 500,
-    CYCLE_DURATION: 120, // 120 seconds per full Day/Night cycle
+    CYCLE_DURATION: 120, 
     COLORS: {
         skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
         coin: 0xFFD700, ground: 0x333344
     }
 };
 
-// --- AUDIO SYSTEM (PROCEDURAL) ---
 const AudioSys = {
     ctx: null,
     muted: false,
@@ -451,23 +459,19 @@ const AudioSys = {
         this.bgmTimer = setInterval(() => {
             if(!this.isPlayingBGM) return;
             const t = this.ctx.currentTime;
-            // Simple Synthwave Bassline
             const bassFreq = [55, 55, 55, 55, 65, 65, 49, 49][Math.floor(Date.now() / 250) % 8];
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(bassFreq, t);
-            // Lowpass filter for muffled bass sound
             const filter = this.ctx.createBiquadFilter();
             filter.type = 'lowpass';
             filter.frequency.setValueAtTime(400, t);
-            
             gain.gain.setValueAtTime(0.1, t);
             gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-            
             osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
             osc.start(t); osc.stop(t + 0.2);
-        }, 250); // 120 BPM
+        }, 250); 
     },
 
     stopBGM: function() {
@@ -1013,9 +1017,16 @@ function activateJetpack() {
     document.getElementById('jetpack-status').classList.add('active'); 
     AudioSys.playPowerup();
 }
+
+// --- V15 修正：动态金币倍率逻辑 ---
 function collectCoin(coin) { 
-    if(coin.userData.collected)return; 
-    coin.userData.collected = true; coins++; 
+    if(coin.userData.collected) return; 
+    coin.userData.collected = true; 
+    
+    // 计算倍率：基础速度15，每增加5速度倍率+1
+    const currentMultiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
+    coins += currentMultiplier; 
+    
     scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1); 
     AudioSys.playCoin();
 }
@@ -1043,7 +1054,7 @@ const Store = {
     buy: function(item) {
         if (item === 'magnet' && GameData.coins >= CONFIG.COST_MAGNET) { 
             GameData.coins -= CONFIG.COST_MAGNET; GameData.inventory.magnet++; 
-            AudioSys.playCoin(); // Sound feedback
+            AudioSys.playCoin(); 
         } 
         else if (item === 'jetpack' && GameData.coins >= CONFIG.COST_JETPACK) { 
             GameData.coins -= CONFIG.COST_JETPACK; GameData.inventory.jetpack++; 
@@ -1136,15 +1147,25 @@ document.getElementById('lb-close-btn').onclick = (e) => {
 function updateHUD() {
     document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
     document.getElementById('coin-display').innerText = coins;
-    const multiplier = (speed / CONFIG.PLAYER_SPEED_BASE).toFixed(1);
-    document.getElementById('speed-indicator').innerText = "SPEED: " + multiplier + "x";
+    
+    // --- V15: 计算并显示倍率 ---
+    const multiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
+    const multElem = document.getElementById('coin-multiplier');
+    if(multElem) {
+        multElem.innerText = "x" + multiplier;
+        // 动态颜色：低倍率青色，中倍率黄色，高倍率红色
+        multElem.style.color = multiplier > 5 ? '#FF0000' : (multiplier > 2 ? '#FFFF00' : '#00FFFF');
+    }
+
+    const speedVal = (speed / CONFIG.PLAYER_SPEED_BASE).toFixed(1);
+    document.getElementById('speed-indicator').innerText = "SPEED: " + speedVal + "x";
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
 }
 
 function gameOver() {
     gameActive = false;
     AudioSys.stopBGM();
-    AudioSys.playCrash(); // Play crash sound
+    AudioSys.playCrash(); 
     
     document.getElementById('hud-panel').classList.add('hidden');
     document.getElementById('pause-btn').classList.add('hidden');
