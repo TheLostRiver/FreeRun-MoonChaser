@@ -20,17 +20,20 @@
         }
         .btn-3d:active { transform: translateY(4px); box-shadow: 0 0px 0 rgba(0,0,0,0.2) !important; }
 
-        #lang-btn {
-            position: absolute; top: 20px; left: 20px; 
+        /* 顶部按钮组 */
+        .top-btn {
+            position: absolute; top: 20px; 
             background: rgba(0, 0, 0, 0.6); color: white; 
             border: 2px solid rgba(255, 255, 255, 0.5);
             padding: 8px 16px; border-radius: 20px; 
             font-weight: bold; font-size: 14px; 
             z-index: 500; cursor: pointer; pointer-events: auto;
         }
+        #lang-btn { left: 20px; }
+        #sound-btn { left: 120px; width: 40px; text-align: center; padding: 8px 0; } /* 音效开关 */
 
         #pause-btn {
-            position: absolute; top: 20px; left: 130px; 
+            position: absolute; top: 20px; left: 180px; 
             background: rgba(230, 126, 34, 0.8); color: white;
             border: 2px solid rgba(255, 255, 255, 0.5);
             width: 40px; height: 40px; border-radius: 50%;
@@ -40,6 +43,7 @@
         }
         #pause-btn:hover { background: #d35400; }
 
+        /* HUD */
         #hud-panel {
             position: absolute; top: 20px; right: 20px;
             display: flex; flex-direction: column; align-items: flex-end;
@@ -64,12 +68,10 @@
             margin-right: 8px; box-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
         }
         #coin-display { font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px 0 #000; }
-
         #speed-indicator {
             font-family: 'Titan One', monospace; color: #00FFFF; font-size: 18px; 
             text-shadow: 1px 1px 0 #000; margin-bottom: 10px; font-style: italic;
         }
-
         #status-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 5px; align-items: flex-end; }
         .status-bar {
             display: flex; align-items: center;
@@ -221,7 +223,8 @@
     <div id="game-container"></div>
 
     <div id="ui-layer">
-        <button id="lang-btn" class="btn-3d">CN / EN</button>
+        <button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
+        <button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
         <div id="pause-btn" class="hidden" onclick="togglePause(event)">II</div>
 
         <div id="hud-panel" class="hidden">
@@ -347,7 +350,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V13 - Dynamic Day/Night Cycle)
+ * FREE RUN: MOON CHASER (V14 - Audio System Added)
  */
 
 const CONFIG = {
@@ -371,6 +374,108 @@ const CONFIG = {
         coin: 0xFFD700, ground: 0x333344
     }
 };
+
+// --- AUDIO SYSTEM (PROCEDURAL) ---
+const AudioSys = {
+    ctx: null,
+    muted: false,
+    bgmOscillators: [],
+    isPlayingBGM: false,
+    
+    init: function() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    },
+
+    toggle: function() {
+        this.muted = !this.muted;
+        document.getElementById('sound-btn').innerText = this.muted ? "🔇" : "🔊";
+        if(this.muted) this.stopBGM();
+        else if(gameActive && !isPaused) this.startBGM();
+    },
+
+    playTone: function(freq, type, duration, vol) {
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+
+    playCoin: function() {
+        if(this.muted) return;
+        this.playTone(1200, 'sine', 0.1, 0.1);
+        setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.1), 50);
+    },
+
+    playPowerup: function() {
+        if (this.muted || !this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+    },
+
+    playCrash: function() {
+        if (this.muted || !this.ctx) return;
+        const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec noise
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+        noise.connect(gain); gain.connect(this.ctx.destination);
+        noise.start();
+    },
+
+    startBGM: function() {
+        if (this.muted || !this.ctx || this.isPlayingBGM) return;
+        this.isPlayingBGM = true;
+        this.bgmTimer = setInterval(() => {
+            if(!this.isPlayingBGM) return;
+            const t = this.ctx.currentTime;
+            // Simple Synthwave Bassline
+            const bassFreq = [55, 55, 55, 55, 65, 65, 49, 49][Math.floor(Date.now() / 250) % 8];
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(bassFreq, t);
+            // Lowpass filter for muffled bass sound
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(400, t);
+            
+            gain.gain.setValueAtTime(0.1, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            
+            osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+            osc.start(t); osc.stop(t + 0.2);
+        }, 250); // 120 BPM
+    },
+
+    stopBGM: function() {
+        this.isPlayingBGM = false;
+        if(this.bgmTimer) clearInterval(this.bgmTimer);
+    }
+};
+window.AudioSys = AudioSys;
 
 const GameData = {
     coins: 0,
@@ -428,7 +533,7 @@ let speed = CONFIG.PLAYER_SPEED_BASE;
 
 // Environment references
 let ambientLight, dirLight, sunMesh;
-let cycleTime = 0; // Current time in cycle (0-CYCLE_DURATION)
+let cycleTime = 0; 
 
 const activeTracks = [];
 const activeObstacles = [];
@@ -687,6 +792,10 @@ function startGame(e) {
     if(e && e.stopPropagation) e.stopPropagation();
     if(document.getElementById('play-btn')) document.getElementById('play-btn').blur();
 
+    // 播放BGM
+    AudioSys.init();
+    AudioSys.startBGM();
+
     [activeObstacles, activeCoins, activeMagnets, activeJetpacks, activeDecorations].forEach(arr => {
         arr.forEach(o => scene.remove(o)); arr.length = 0;
     });
@@ -700,7 +809,7 @@ function startGame(e) {
     targetLane = 1; speed = CONFIG.PLAYER_SPEED_BASE;
     score = 0; coins = 0; distance = 0; survivalTime = 0;
     isJumping = false; isSliding = false; verticalVelocity = 0;
-    cycleTime = 0; // Reset Day/Night Cycle
+    cycleTime = 0; 
     
     magnetActive = false; magnetTimer = 0;
     jetpackActive = false; jetpackTimer = 0;
@@ -734,54 +843,36 @@ window.startGame = startGame;
 // --- DAY/NIGHT CYCLE LOGIC ---
 function updateDayNightCycle(delta) {
     cycleTime += delta;
-    const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION; // 0 to 1
+    const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION; 
     
-    // Cycle Logic: Night(0) -> Sunrise(0.25) -> Day(0.5) -> Sunset(0.75) -> Night(1)
-    let skyColor, fogColor;
-    let sunColor = 0xFFFFDD;
-    let lightIntensity = 0.4;
-    let emissiveIntensity = 0.2; // Windows glow
+    let skyColor, sunColor = 0xFFFFDD, lightIntensity = 0.4, emissiveIntensity = 0.2;
 
-    if (progress < 0.2) { // Night -> Sunrise
+    if (progress < 0.2) { 
         const t = progress / 0.2;
         skyColor = new THREE.Color(CONFIG.COLORS.skyNight).lerp(new THREE.Color(CONFIG.COLORS.skySunrise), t);
-        lightIntensity = 0.3 + t * 0.5; // 0.3 -> 0.8
-        emissiveIntensity = 0.5 * (1 - t); // Fade out windows
-    } else if (progress < 0.5) { // Sunrise -> Day
+        lightIntensity = 0.3 + t * 0.5; emissiveIntensity = 0.5 * (1 - t);
+    } else if (progress < 0.5) { 
         const t = (progress - 0.2) / 0.3;
         skyColor = new THREE.Color(CONFIG.COLORS.skySunrise).lerp(new THREE.Color(CONFIG.COLORS.skyDay), t);
-        lightIntensity = 0.8 + t * 0.4; // 0.8 -> 1.2
-        emissiveIntensity = 0; // Windows dark
-        sunColor = 0xFFFFAA;
-    } else if (progress < 0.7) { // Day -> Sunset
+        lightIntensity = 0.8 + t * 0.4; emissiveIntensity = 0; sunColor = 0xFFFFAA;
+    } else if (progress < 0.7) { 
         const t = (progress - 0.5) / 0.2;
         skyColor = new THREE.Color(CONFIG.COLORS.skyDay).lerp(new THREE.Color(CONFIG.COLORS.skySunset), t);
-        lightIntensity = 1.2 - t * 0.6; // 1.2 -> 0.6
-        emissiveIntensity = t * 0.3; // Windows start glowing
-        sunColor = 0xFFCC00;
-    } else { // Sunset -> Night
+        lightIntensity = 1.2 - t * 0.6; emissiveIntensity = t * 0.3; sunColor = 0xFFCC00;
+    } else { 
         const t = (progress - 0.7) / 0.3;
         skyColor = new THREE.Color(CONFIG.COLORS.skySunset).lerp(new THREE.Color(CONFIG.COLORS.skyNight), t);
-        lightIntensity = 0.6 - t * 0.3; // 0.6 -> 0.3
-        emissiveIntensity = 0.3 + t * 0.2; // Windows fully glow
-        sunColor = 0xDDDDFF; // Moon color
+        lightIntensity = 0.6 - t * 0.3; emissiveIntensity = 0.3 + t * 0.2; sunColor = 0xDDDDFF;
     }
 
-    scene.background = skyColor;
-    scene.fog.color = skyColor;
-    ambientLight.intensity = lightIntensity * 0.6;
-    dirLight.intensity = lightIntensity;
+    scene.background = skyColor; scene.fog.color = skyColor;
+    ambientLight.intensity = lightIntensity * 0.6; dirLight.intensity = lightIntensity;
     
-    // Move Sun/Moon
     const angle = progress * Math.PI * 2;
-    sunMesh.position.x = Math.cos(angle) * 100;
-    sunMesh.position.y = Math.sin(angle) * 100;
+    sunMesh.position.x = Math.cos(angle) * 100; sunMesh.position.y = Math.sin(angle) * 100;
     sunMesh.material.color.setHex(sunColor);
 
-    // Update Building Windows
-    buildingMaterials.forEach(mat => {
-        mat.emissiveIntensity = emissiveIntensity;
-    });
+    buildingMaterials.forEach(mat => { mat.emissiveIntensity = emissiveIntensity; });
 }
 
 function animate() {
@@ -790,7 +881,7 @@ function animate() {
 
     if (gameActive) {
         if (!isPaused) {
-            updateDayNightCycle(delta); // Update environment
+            updateDayNightCycle(delta); 
 
             const moveDist = speed * delta;
             player.position.z -= moveDist;
@@ -912,9 +1003,22 @@ function checkCollisions() {
     }
 }
 
-function activateMagnet() { magnetActive = true; magnetTimer = CONFIG.MAGNET_DURATION; document.getElementById('magnet-status').classList.add('active'); }
-function activateJetpack() { jetpackActive = true; jetpackTimer = CONFIG.JETPACK_DURATION; document.getElementById('jetpack-status').classList.add('active'); }
-function collectCoin(coin) { if(coin.userData.collected)return; coin.userData.collected = true; coins++; scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1); }
+function activateMagnet() { 
+    magnetActive = true; magnetTimer = CONFIG.MAGNET_DURATION; 
+    document.getElementById('magnet-status').classList.add('active'); 
+    AudioSys.playPowerup();
+}
+function activateJetpack() { 
+    jetpackActive = true; jetpackTimer = CONFIG.JETPACK_DURATION; 
+    document.getElementById('jetpack-status').classList.add('active'); 
+    AudioSys.playPowerup();
+}
+function collectCoin(coin) { 
+    if(coin.userData.collected)return; 
+    coin.userData.collected = true; coins++; 
+    scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1); 
+    AudioSys.playCoin();
+}
 
 function updateWorldGen() {
     if (activeTracks[0].position.z > player.position.z + CONFIG.TRACK_LENGTH) {
@@ -937,8 +1041,14 @@ const Store = {
         document.getElementById('check-jet').checked = GameData.settings.autoJetpack;
     },
     buy: function(item) {
-        if (item === 'magnet' && GameData.coins >= CONFIG.COST_MAGNET) { GameData.coins -= CONFIG.COST_MAGNET; GameData.inventory.magnet++; } 
-        else if (item === 'jetpack' && GameData.coins >= CONFIG.COST_JETPACK) { GameData.coins -= CONFIG.COST_JETPACK; GameData.inventory.jetpack++; }
+        if (item === 'magnet' && GameData.coins >= CONFIG.COST_MAGNET) { 
+            GameData.coins -= CONFIG.COST_MAGNET; GameData.inventory.magnet++; 
+            AudioSys.playCoin(); // Sound feedback
+        } 
+        else if (item === 'jetpack' && GameData.coins >= CONFIG.COST_JETPACK) { 
+            GameData.coins -= CONFIG.COST_JETPACK; GameData.inventory.jetpack++; 
+            AudioSys.playCoin(); 
+        }
         GameData.save(); this.updateUI(); updateHUD();
     },
     toggle: function(item) {
@@ -970,10 +1080,12 @@ function togglePause(e) {
     if (isPaused) {
         document.getElementById('pause-screen').classList.remove('hidden');
         document.getElementById('pause-btn').classList.add('hidden'); 
+        AudioSys.stopBGM();
     } else {
         document.getElementById('pause-screen').classList.add('hidden');
         document.getElementById('pause-btn').classList.remove('hidden');
         clock.getDelta(); 
+        AudioSys.startBGM();
     }
 }
 window.togglePause = togglePause;
@@ -982,6 +1094,8 @@ function goHome(e) {
     if(e && e.stopPropagation) e.stopPropagation();
     gameActive = false;
     isPaused = false; 
+    AudioSys.stopBGM();
+    
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-screen').classList.add('hidden');
     document.getElementById('pause-btn').classList.add('hidden');
@@ -1029,6 +1143,9 @@ function updateHUD() {
 
 function gameOver() {
     gameActive = false;
+    AudioSys.stopBGM();
+    AudioSys.playCrash(); // Play crash sound
+    
     document.getElementById('hud-panel').classList.add('hidden');
     document.getElementById('pause-btn').classList.add('hidden');
     document.getElementById('game-over').classList.remove('hidden');
