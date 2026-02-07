@@ -121,6 +121,7 @@
         .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
         .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
         
+        /* 暂停菜单样式 */
         #pause-screen { z-index: 400; background: rgba(0, 0, 0, 0.6); }
         .pause-container {
             background: rgba(20, 20, 50, 0.9); padding: 40px 60px;
@@ -137,6 +138,7 @@
             border-radius: 30px; box-shadow: 0 5px 0 #27ae60;
         }
 
+        /* Store UI */
         #store-screen { z-index: 250; }
         .store-container {
             background: rgba(10, 10, 40, 0.95); padding: 25px;
@@ -358,7 +360,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V16 - Camera Fixed)
+ * FREE RUN: MOON CHASER (V17 - Fairness Fixed & Balanced)
  */
 
 const CONFIG = {
@@ -377,6 +379,9 @@ const CONFIG = {
     COST_JETPACK: 200,
     INITIAL_COINS: 500,
     CYCLE_DURATION: 120, 
+    // New Balance Configs
+    MOVING_TRAIN_SPAWN_OFFSET: 180, // Spawn much further back to avoid "pop-in"
+    TRAIN_COOLDOWN: 3000, // Min ms between moving train spawns
     COLORS: {
         skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
         coin: 0xFFD700, ground: 0x333344
@@ -544,7 +549,10 @@ const activeCoins = [];
 const activeMagnets = [];
 const activeJetpacks = [];
 const activeDecorations = []; 
-let world = { lastSpawnZ: 0 };
+let world = { 
+    lastSpawnZ: 0,
+    lastMovingTrainTime: 0 // New Logic: Track last moving train
+};
 
 let targetLane = 1;
 let isJumping = false, isSliding = false;
@@ -747,11 +755,14 @@ function spawnBuilding(zPos) {
     scene.add(b2); activeDecorations.push(b2);
 }
 
+// --- V17 CRITICAL FIX: FAIR SPAWNING ---
 function spawnObstacle(zPos) {
     if (jetpackActive) { for(let i=0; i<3; i++) spawnCoins(CONFIG.LANES[i], zPos, CONFIG.JETPACK_HEIGHT); }
     const rand = Math.random();
     const laneIdx = Math.floor(Math.random() * 3);
     const laneX = CONFIG.LANES[laneIdx];
+    const now = Date.now();
+
     if (rand < 0.05) { 
         const mag = createMagnetModel(); mag.position.set(laneX, 1.0, zPos); scene.add(mag); activeMagnets.push(mag);
     } else if (rand < 0.10) { 
@@ -759,9 +770,19 @@ function spawnObstacle(zPos) {
     } else {
         let mesh;
         const obstacleType = Math.random();
-        if (obstacleType < 0.3) {
-            mesh = createTrainModel(true); mesh.position.set(laneX, 0, zPos - 50);
+        
+        // ** Moving Train Logic Update **
+        // 1. Check Cooldown
+        // 2. Only spawn if we haven't recently spawned one
+        let canSpawnTrain = (now - world.lastMovingTrainTime) > CONFIG.TRAIN_COOLDOWN;
+        
+        if (canSpawnTrain && obstacleType < 0.25) { // Lowered chance slightly
+            // Spawn Moving Train FAR AWAY (zPos - 180) to give reaction time
+            mesh = createTrainModel(true); 
+            mesh.position.set(laneX, 0, zPos - CONFIG.MOVING_TRAIN_SPAWN_OFFSET);
+            world.lastMovingTrainTime = now;
         } else if (obstacleType < 0.6) {
+            // Static Train
             mesh = createTrainModel(false); mesh.position.set(laneX, 0, zPos);
         } else if (obstacleType < 0.8) {
             const group = new THREE.Group();
@@ -774,9 +795,14 @@ function spawnObstacle(zPos) {
             mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.5), new THREE.MeshLambertMaterial({color:0xE67E22}));
             mesh.position.set(laneX, 0.4, zPos);
         }
-        if(mesh.isMesh) { mesh.castShadow = true; mesh.receiveShadow = true; }
+        
+        if(mesh.isMesh || mesh.isGroup) { 
+            // Ensure shadow casting for groups too
+            mesh.traverse(child => { if(child.isMesh) { child.castShadow = true; child.receiveShadow = true; }});
+        }
         scene.add(mesh); activeObstacles.push(mesh);
     }
+    
     if (!jetpackActive) { const coinLane = (laneIdx + 1) % 3; spawnCoins(CONFIG.LANES[coinLane], zPos, 0.8); }
     spawnBuilding(zPos);
 }
@@ -817,6 +843,8 @@ function startGame(e) {
     magnetActive = false; magnetTimer = 0;
     jetpackActive = false; jetpackTimer = 0;
     isPaused = false; 
+    world.lastMovingTrainTime = 0; // Reset logic
+
     document.getElementById('magnet-status').classList.remove('active');
     document.getElementById('jetpack-status').classList.remove('active');
     
@@ -901,7 +929,6 @@ function animate() {
                 }
             });
             
-            // --- V16 New Camera Logic ---
             let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
             
             if (jetpackActive) {
@@ -914,7 +941,6 @@ function animate() {
                 const targetH = CONFIG.JETPACK_HEIGHT + hoverWave;
                 player.position.y += (targetH - player.position.y) * 5 * delta;
                 
-                // Flight Animation
                 player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
                 player.userData.flames.forEach(f => {
                     f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
@@ -925,10 +951,7 @@ function animate() {
                 player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
                 isJumping = false; isSliding = false;
 
-                // ** Jetpack Camera Settings **
-                targetY = 11;       // Higher
-                targetZOffset = 14; // Further back
-                targetRotX = -0.45; // Look down
+                targetY = 11; targetZOffset = 14; targetRotX = -0.45;
             } else {
                 player.userData.pack.visible = false;
                 player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
@@ -951,7 +974,6 @@ function animate() {
                 }
             }
 
-            // ** Smooth Camera Lerp **
             camera.position.y += (targetY - camera.position.y) * 3 * delta;
             const desiredZ = player.position.z + targetZOffset;
             camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
@@ -1027,7 +1049,6 @@ function activateJetpack() {
     AudioSys.playPowerup();
 }
 
-// --- V15: Coin Multiplier ---
 function collectCoin(coin) { 
     if(coin.userData.collected) return; 
     coin.userData.collected = true; 
@@ -1123,7 +1144,6 @@ function goHome(e) {
     
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
     
-    // Reset Camera
     camera.position.set(0, 4, 10); 
     camera.rotation.set(-0.1, 0, 0); 
     
@@ -1159,7 +1179,6 @@ function updateHUD() {
     document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
     document.getElementById('coin-display').innerText = coins;
     
-    // --- V15: 计算并显示倍率 ---
     const multiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
     const multElem = document.getElementById('coin-multiplier');
     if(multElem) {
