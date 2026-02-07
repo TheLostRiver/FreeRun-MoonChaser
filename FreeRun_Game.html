@@ -191,13 +191,12 @@
             text-shadow: 2px 2px 0 #000; display: flex; align-items: center; gap: 5px;
         }
 
-        /* --- V19 UI 美化核心部分 --- */
         #controls-hint {
             margin-top: 30px; 
-            background: rgba(10, 10, 30, 0.85); /* 深色背景 */
+            background: rgba(10, 10, 30, 0.85); 
             padding: 20px 30px;
             border-radius: 20px; 
-            border: 2px solid rgba(0, 255, 255, 0.3); /* 青色微光边框 */
+            border: 2px solid rgba(0, 255, 255, 0.3);
             display: flex; flex-direction: column; gap: 15px; align-items: center;
             pointer-events: none;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
@@ -209,35 +208,20 @@
             font-family: 'Titan One', sans-serif;
             text-shadow: 1px 1px 2px black; 
         }
-        
-        /* 机械键盘风格按键 */
         .key-cap {
             display: inline-block; min-width: 32px; height: 32px;
-            background: #222; /* 深灰键帽 */
-            color: #eee;
+            background: #222; color: #eee;
             font-family: 'Segoe UI', sans-serif; font-weight: 900; line-height: 30px; text-align: center;
             padding: 0 8px; border-radius: 6px;
-            border-bottom: 4px solid #000; /* 立体感 */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+            border-bottom: 4px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
             transform: translateY(0);
         }
-        
-        /* 按键颜色编码 */
-        .key-move { border-bottom-color: #008B8B; color: #00FFFF; } /* 青色-移动 */
-        .key-jump { border-bottom-color: #B8860B; color: #FFD700; } /* 黄色-跳跃 */
-        .key-roll { border-bottom-color: #8B008B; color: #FF00FF; } /* 紫色-翻滚 */
-        
-        .control-label { 
-            color: #ddd; font-size: 12px; letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        
-        .swipe-hint {
-            display: flex; align-items: center; gap: 8px;
-            color: #aaa; font-size: 12px; font-style: italic; margin-top: 5px;
-        }
+        .key-move { border-bottom-color: #008B8B; color: #00FFFF; }
+        .key-jump { border-bottom-color: #B8860B; color: #FFD700; }
+        .key-roll { border-bottom-color: #8B008B; color: #FF00FF; }
+        .control-label { color: #ddd; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
+        .swipe-hint { display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 12px; font-style: italic; margin-top: 5px; }
         .swipe-icon { font-size: 16px; }
-
         
         #leaderboard-screen { z-index: 200; }
         .leaderboard-container {
@@ -391,7 +375,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V19 - UI Facelift)
+ * FREE RUN: MOON CHASER (V20 - Camera & UI Fixes)
  */
 
 const CONFIG = {
@@ -410,7 +394,6 @@ const CONFIG = {
     COST_JETPACK: 200,
     INITIAL_COINS: 500,
     CYCLE_DURATION: 120, 
-    // Balance
     MOVING_TRAIN_SPAWN_OFFSET: 180, 
     TRAIN_COOLDOWN: 3000, 
     COLORS: {
@@ -995,10 +978,10 @@ function animate() {
                 player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
                 isJumping = false; isSliding = false;
 
-                // V18 Camera Tweaks
-                targetY = 8;        
-                targetZOffset = 10; 
-                targetRotX = -0.3;  
+                // V20 Camera Fix: Higher & Tilted Down
+                targetY = 12;       // 拉高高度，越过头顶
+                targetZOffset = 14; // 稍微往后拉一点点
+                targetRotX = -0.45; // 向下俯视，把角色压到屏幕下方
             } else {
                 player.userData.pack.visible = false;
                 player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
@@ -1191,6 +1174,7 @@ function goHome(e) {
     
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
     
+    // Reset Camera
     camera.position.set(0, 4, 10); 
     camera.rotation.set(-0.1, 0, 0); 
     
