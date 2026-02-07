@@ -353,7 +353,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V10 - Pause Animation Fixed)
+ * FREE RUN: MOON CHASER (V11 - Enhanced City Environment)
  */
 
 const CONFIG = {
@@ -444,6 +444,9 @@ let verticalVelocity = 0, slideTimer = 0;
 let magnetActive = false, magnetTimer = 0;
 let jetpackActive = false, jetpackTimer = 0; 
 
+// Building Materials Cache
+let buildingMaterials = [];
+
 function init() {
     document.getElementById('loading').style.display = 'none';
     GameData.load(); 
@@ -465,12 +468,53 @@ function init() {
     dir.shadow.mapSize.width = 1024; dir.shadow.mapSize.height = 1024;
     dir.shadow.camera.near = 0.5; dir.shadow.camera.far = 100;
     scene.add(dir);
+    
+    createBuildingMaterials(); // Initialize procedural textures
     createEnvironment();
     createPlayerModel();
     setupInputs();
     setupUI();
     clock = new THREE.Clock();
     animate();
+}
+
+// --- PROCEDURAL TEXTURES (The "Better Buildings" Magic) ---
+function createBuildingMaterials() {
+    const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22]; // Green, Blue, Purple, Yellow, Orange
+    
+    colors.forEach(col => {
+        // Create a canvas for the window pattern
+        const canvas = document.createElement('canvas');
+        canvas.width = 64; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        
+        // Base Wall
+        ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
+        ctx.fillRect(0, 0, 64, 64);
+        
+        // Windows (Lit)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)'; // Glowing window
+        // Draw 2x4 grid of windows
+        for(let y=10; y<64; y+=16) {
+            for(let x=8; x<64; x+=16) {
+                if(Math.random() > 0.3) { // Randomly turn lights off
+                    ctx.fillRect(x, y, 8, 10);
+                }
+            }
+        }
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.magFilter = THREE.NearestFilter; // Sharp pixels for retro look
+        
+        const mat = new THREE.MeshPhongMaterial({ 
+            map: texture,
+            color: 0xaaaaaa, // Slight dimming
+            emissive: col,
+            emissiveIntensity: 0.2, // Neon glow
+            shininess: 30
+        });
+        buildingMaterials.push(mat);
+    });
 }
 
 function createPlayerModel() {
@@ -578,14 +622,28 @@ function createTrackSegment(zPos) {
     activeTracks.push(seg);
 }
 
+// --- NEW BUILDING GENERATION ---
 function spawnBuilding(zPos) {
-    const h1 = 10 + Math.random() * 20;
-    const b1 = new THREE.Mesh(new THREE.BoxGeometry(8, h1, 8), new THREE.MeshLambertMaterial({ color: 0x222233 }));
-    b1.position.set(-15, h1/2 - 2, zPos); b1.castShadow = true; b1.receiveShadow = true;
+    // Left Side Building
+    const h1 = 15 + Math.random() * 30; // Random Height 15-45
+    const w1 = 5 + Math.random() * 5;   // Random Width 5-10
+    const d1 = 5 + Math.random() * 5;   // Random Depth
+    const mat1 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+    
+    const b1 = new THREE.Mesh(new THREE.BoxGeometry(w1, h1, d1), mat1);
+    b1.position.set(-12 - (w1/2), h1/2 - 5, zPos); // Adjusted position based on width
+    b1.castShadow = true; b1.receiveShadow = true;
     scene.add(b1); activeDecorations.push(b1);
-    const h2 = 10 + Math.random() * 20;
-    const b2 = new THREE.Mesh(new THREE.BoxGeometry(8, h2, 8), new THREE.MeshLambertMaterial({ color: 0x222233 }));
-    b2.position.set(15, h2/2 - 2, zPos); b2.castShadow = true; b2.receiveShadow = true;
+
+    // Right Side Building
+    const h2 = 15 + Math.random() * 30;
+    const w2 = 5 + Math.random() * 5;
+    const d2 = 5 + Math.random() * 5;
+    const mat2 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+
+    const b2 = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), mat2);
+    b2.position.set(12 + (w2/2), h2/2 - 5, zPos);
+    b2.castShadow = true; b2.receiveShadow = true;
     scene.add(b2); activeDecorations.push(b2);
 }
 
@@ -655,7 +713,7 @@ function startGame(e) {
     
     magnetActive = false; magnetTimer = 0;
     jetpackActive = false; jetpackTimer = 0;
-    isPaused = false; // 重置暂停状态
+    isPaused = false; 
     document.getElementById('magnet-status').classList.remove('active');
     document.getElementById('jetpack-status').classList.remove('active');
     
@@ -677,19 +735,17 @@ function startGame(e) {
 
     document.getElementById('main-menu').classList.add('hidden');
     document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-btn').classList.remove('hidden'); // 显示暂停按钮
+    document.getElementById('pause-btn').classList.remove('hidden'); 
     document.getElementById('hud-panel').classList.remove('hidden');
 }
 window.startGame = startGame;
 
-// --- 动画循环修复 ---
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta(); // 无论是否暂停，时钟都必须更新以清空 delta
+    const delta = clock.getDelta(); 
 
     if (gameActive) {
         if (!isPaused) {
-            // --- 游戏运行逻辑 ---
             const moveDist = speed * delta;
             player.position.z -= moveDist;
             distance += moveDist;
@@ -764,11 +820,8 @@ function animate() {
 
             score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
             updateHUD();
-        } else {
-            // --- 暂停中 (什么都不做，画面冻结) ---
-        }
+        } 
     } else {
-        // --- 主菜单待机动画 ---
         const t = Date.now() * 0.002;
         player.position.y = Math.sin(t) * 0.1; 
         player.rotation.y += 0.01;
@@ -868,7 +921,6 @@ function togglePause(e) {
     } else {
         document.getElementById('pause-screen').classList.add('hidden');
         document.getElementById('pause-btn').classList.remove('hidden');
-        // 关键：恢复时清空 delta，防止动画跳变
         clock.getDelta(); 
     }
 }
@@ -959,8 +1011,6 @@ function updateLocalization() {
     document.getElementById('item-name-jet').innerText = t.itemNameJet;
     document.getElementById('item-desc-jet').innerText = t.itemDescJet;
     document.getElementById('auto-use-jet').innerText = t.autoUse;
-    
-    // 暂停菜单本地化
     document.getElementById('pause-title').innerText = t.pauseTitle;
     document.getElementById('resume-btn').innerText = t.resume;
     document.getElementById('pause-home-btn').innerText = t.pauseMenu;
@@ -971,16 +1021,13 @@ function updateLocalization() {
 
 function setupInputs() {
     document.addEventListener('keydown', e => { 
-        // 暂停时禁止操作
         if (isPaused) return;
-        
         if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault(); 
         if(!gameActive) return; 
         if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') { if(targetLane>0) targetLane--; } 
         if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') { if(targetLane<2) targetLane++; } 
         if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ') { if(!isJumping&&!jetpackActive) { isJumping=true; verticalVelocity=CONFIG.JUMP_FORCE; isSliding=false; player.scale.y=1; } } 
         if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') { if(!isJumping&&!jetpackActive) { isSliding=true; slideTimer=0.8; verticalVelocity=-0.5; } } 
-        // ESC键暂停
         if(e.key === 'Escape') togglePause();
     });
     
