@@ -30,9 +30,9 @@
             z-index: 500; cursor: pointer; pointer-events: auto;
         }
 
-        /* 暂停按钮 (新功能) */
+        /* 暂停按钮 */
         #pause-btn {
-            position: absolute; top: 20px; left: 130px; /* 放在语言按钮右边 */
+            position: absolute; top: 20px; left: 130px; 
             background: rgba(230, 126, 34, 0.8); color: white;
             border: 2px solid rgba(255, 255, 255, 0.5);
             width: 40px; height: 40px; border-radius: 50%;
@@ -115,7 +115,7 @@
         .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
         .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
         
-        /* 暂停菜单样式 (新设计) */
+        /* 暂停菜单样式 */
         #pause-screen { z-index: 400; background: rgba(0, 0, 0, 0.6); }
         .pause-container {
             background: rgba(20, 20, 50, 0.9); padding: 40px 60px;
@@ -353,7 +353,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V9 - With Pause Functionality)
+ * FREE RUN: MOON CHASER (V10 - Pause Animation Fixed)
  */
 
 const CONFIG = {
@@ -426,7 +426,7 @@ let currentLang = 'en';
 let scene, camera, renderer, clock;
 let player;
 let gameActive = false;
-let isPaused = false; // 新增暂停状态
+let isPaused = false;
 let score = 0, coins = 0, distance = 0, survivalTime = 0;
 let speed = CONFIG.PLAYER_SPEED_BASE;
 
@@ -682,89 +682,96 @@ function startGame(e) {
 }
 window.startGame = startGame;
 
+// --- 动画循环修复 ---
 function animate() {
     requestAnimationFrame(animate);
-    const delta = clock.getDelta();
+    const delta = clock.getDelta(); // 无论是否暂停，时钟都必须更新以清空 delta
 
-    // 暂停逻辑：如果暂停，则不更新游戏状态
-    if (gameActive && !isPaused) {
-        const moveDist = speed * delta;
-        player.position.z -= moveDist;
-        distance += moveDist;
-        
-        if(speed < CONFIG.PLAYER_SPEED_MAX) { speed += CONFIG.SPEED_ACCELERATION * delta; }
+    if (gameActive) {
+        if (!isPaused) {
+            // --- 游戏运行逻辑 ---
+            const moveDist = speed * delta;
+            player.position.z -= moveDist;
+            distance += moveDist;
+            
+            if(speed < CONFIG.PLAYER_SPEED_MAX) { speed += CONFIG.SPEED_ACCELERATION * delta; }
 
-        const tx = CONFIG.LANES[targetLane];
-        player.position.x += (tx - player.position.x) * 10 * delta;
-        
-        if (jetpackActive) {
-            jetpackTimer -= delta;
-            document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
-            if (jetpackTimer <= 0) { jetpackActive = false; document.getElementById('jetpack-status').classList.remove('active'); }
+            const tx = CONFIG.LANES[targetLane];
+            player.position.x += (tx - player.position.x) * 10 * delta;
             
-            player.userData.pack.visible = true;
-            const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
-            const targetY = CONFIG.JETPACK_HEIGHT + hoverWave;
-            player.position.y += (targetY - player.position.y) * 5 * delta;
-            
-            player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
-            player.userData.flames.forEach(f => {
-                f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
-                f.scale.set(pulse, pulse * 1.2, pulse);
-            });
-            player.userData.lLeg.position.z = -0.1; player.userData.rLeg.position.z = -0.1;
-            player.userData.lLeg.rotation.x = -0.2 + hoverWave * 0.2; player.userData.rLeg.rotation.x = -0.2 + hoverWave * 0.2;
-            player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
-            isJumping = false; isSliding = false;
-        } else {
-            player.userData.pack.visible = false;
-            player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
-            if (isJumping) {
-                player.position.y += verticalVelocity; verticalVelocity -= CONFIG.GRAVITY;
-                if (player.position.y <= 0) { player.position.y = 0; isJumping = false; }
+            if (jetpackActive) {
+                jetpackTimer -= delta;
+                document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
+                if (jetpackTimer <= 0) { jetpackActive = false; document.getElementById('jetpack-status').classList.remove('active'); }
+                
+                player.userData.pack.visible = true;
+                const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
+                const targetY = CONFIG.JETPACK_HEIGHT + hoverWave;
+                player.position.y += (targetY - player.position.y) * 5 * delta;
+                
+                player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
+                player.userData.flames.forEach(f => {
+                    f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
+                    f.scale.set(pulse, pulse * 1.2, pulse);
+                });
+                player.userData.lLeg.position.z = -0.1; player.userData.rLeg.position.z = -0.1;
+                player.userData.lLeg.rotation.x = -0.2 + hoverWave * 0.2; player.userData.rLeg.rotation.x = -0.2 + hoverWave * 0.2;
+                player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
+                isJumping = false; isSliding = false;
             } else {
-                if (player.position.y > 0) player.position.y -= CONFIG.GRAVITY * 10;
-                if (player.position.y < 0) player.position.y = 0;
-            }
-            if (isSliding) {
-                slideTimer -= delta; player.scale.y = 0.5;
-                if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
-            }
-            if (!isJumping && !isSliding) {
-                const time = Date.now() * 0.015;
-                player.userData.lLeg.rotation.x = 0; player.userData.rLeg.rotation.x = 0; 
-                player.userData.lLeg.position.z = Math.sin(time) * 0.2; player.userData.rLeg.position.z = Math.cos(time) * 0.2;
-                player.userData.lArm.rotation.x = Math.cos(time) * 0.5; player.userData.rArm.rotation.x = Math.sin(time) * 0.5;
-            }
-        }
-
-        if (magnetActive) {
-            magnetTimer -= delta;
-            document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
-            if (magnetTimer <= 0) { magnetActive = false; document.getElementById('magnet-status').classList.remove('active'); }
-            activeCoins.forEach(coin => {
-                if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) coin.userData.attracted = true;
-                if (coin.userData.attracted) {
-                    const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
-                    coin.position.add(target.sub(coin.position).normalize().multiplyScalar(30 * delta));
-                    if (coin.position.distanceTo(player.position) < 1.0) collectCoin(coin);
+                player.userData.pack.visible = false;
+                player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
+                if (isJumping) {
+                    player.position.y += verticalVelocity; verticalVelocity -= CONFIG.GRAVITY;
+                    if (player.position.y <= 0) { player.position.y = 0; isJumping = false; }
+                } else {
+                    if (player.position.y > 0) player.position.y -= CONFIG.GRAVITY * 10;
+                    if (player.position.y < 0) player.position.y = 0;
                 }
-            });
+                if (isSliding) {
+                    slideTimer -= delta; player.scale.y = 0.5;
+                    if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
+                }
+                if (!isJumping && !isSliding) {
+                    const time = Date.now() * 0.015;
+                    player.userData.lLeg.rotation.x = 0; player.userData.rLeg.rotation.x = 0; 
+                    player.userData.lLeg.position.z = Math.sin(time) * 0.2; player.userData.rLeg.position.z = Math.cos(time) * 0.2;
+                    player.userData.lArm.rotation.x = Math.cos(time) * 0.5; player.userData.rArm.rotation.x = Math.sin(time) * 0.5;
+                }
+            }
+
+            if (magnetActive) {
+                magnetTimer -= delta;
+                document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
+                if (magnetTimer <= 0) { magnetActive = false; document.getElementById('magnet-status').classList.remove('active'); }
+                activeCoins.forEach(coin => {
+                    if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) coin.userData.attracted = true;
+                    if (coin.userData.attracted) {
+                        const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
+                        coin.position.add(target.sub(coin.position).normalize().multiplyScalar(30 * delta));
+                        if (coin.position.distanceTo(player.position) < 1.0) collectCoin(coin);
+                    }
+                });
+            }
+
+            updateWorldGen();
+            checkCollisions();
+            
+            const camTargetY = jetpackActive ? 8 : 5;
+            camera.position.z = player.position.z + 8;
+            camera.position.x = player.position.x * 0.4;
+            camera.position.y += (camTargetY - camera.position.y) * 2 * delta;
+
+            score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
+            updateHUD();
+        } else {
+            // --- 暂停中 (什么都不做，画面冻结) ---
         }
-
-        updateWorldGen();
-        checkCollisions();
-        
-        const camTargetY = jetpackActive ? 8 : 5;
-        camera.position.z = player.position.z + 8;
-        camera.position.x = player.position.x * 0.4;
-        camera.position.y += (camTargetY - camera.position.y) * 2 * delta;
-
-        score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
-        updateHUD();
     } else {
+        // --- 主菜单待机动画 ---
         const t = Date.now() * 0.002;
-        player.position.y = Math.sin(t) * 0.1; player.rotation.y += 0.01;
+        player.position.y = Math.sin(t) * 0.1; 
+        player.rotation.y += 0.01;
     }
     renderer.render(scene, camera);
 }
@@ -857,11 +864,11 @@ function togglePause(e) {
     
     if (isPaused) {
         document.getElementById('pause-screen').classList.remove('hidden');
-        document.getElementById('pause-btn').classList.add('hidden'); // 暂停时隐藏按钮
+        document.getElementById('pause-btn').classList.add('hidden'); 
     } else {
         document.getElementById('pause-screen').classList.add('hidden');
         document.getElementById('pause-btn').classList.remove('hidden');
-        // 恢复时重置 Delta，防止瞬移
+        // 关键：恢复时清空 delta，防止动画跳变
         clock.getDelta(); 
     }
 }
@@ -870,11 +877,11 @@ window.togglePause = togglePause;
 function goHome(e) {
     if(e && e.stopPropagation) e.stopPropagation();
     gameActive = false;
-    isPaused = false; // 确保不处于暂停状态
+    isPaused = false; 
     document.getElementById('game-over').classList.add('hidden');
     document.getElementById('pause-screen').classList.add('hidden');
     document.getElementById('pause-btn').classList.add('hidden');
-    document.getElementById('hud-panel').classList.add('hidden'); // 回主菜单隐藏HUD
+    document.getElementById('hud-panel').classList.add('hidden'); 
     document.getElementById('main-menu').classList.remove('hidden');
     
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
