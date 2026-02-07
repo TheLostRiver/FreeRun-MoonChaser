@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Run: Moon Chaser</title>
+    <title>Free Run: Moon Chaser (V23)</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@900&display=swap');
@@ -117,6 +117,9 @@
 
         .play-btn-style { background-color: #2ecc71; color: white; font-size: 28px; padding: 15px 60px; border-radius: 50px; box-shadow: 0 6px 0 #219150; margin-bottom: 20px; }
         .store-btn-style { background-color: #9b59b6; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #8e44ad; margin-bottom: 10px; }
+        /* 角色按钮样式 */
+        .char-btn-style { background-color: #e67e22; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #d35400; margin-bottom: 10px; }
+        
         .rank-btn-style { background-color: #f39c12; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #d35400; margin-bottom: 20px; }
         .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
         .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
@@ -137,7 +140,8 @@
             border-radius: 30px; box-shadow: 0 5px 0 #27ae60;
         }
 
-        #store-screen { z-index: 250; }
+        /* Generic Modal (Store & Characters) */
+        #store-screen, #char-screen { z-index: 250; }
         .store-container {
             background: rgba(10, 10, 40, 0.95); padding: 25px;
             border-radius: 20px; border: 2px solid #00FFFF;
@@ -170,6 +174,11 @@
         }
         .buy-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #219150; }
         .buy-btn:disabled { background: #555; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
+        
+        /* 角色按钮特定样式 */
+        .buy-btn.equipped { background: #555; cursor: default; box-shadow: none; }
+        .buy-btn.select { background: #e67e22; box-shadow: 0 4px 0 #d35400; }
+        
         .item-owned { color: #00FFFF; font-size: 14px; margin-bottom: 8px; font-weight: bold; }
         .toggle-container { display: flex; align-items: center; gap: 10px; color: white; font-size: 14px; }
         .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
@@ -282,10 +291,24 @@
             <div class="menu-content">
                 <button id="play-btn" class="btn-3d play-btn-style" onclick="startGame(event)">TAP TO PLAY</button>
                 <button id="store-btn" class="btn-3d store-btn-style" onclick="Store.show(event)">SUPPLY STORE</button>
+                <button id="char-btn" class="btn-3d char-btn-style" onclick="CharSys.show(event)">CHARACTERS</button>
                 <button id="rank-btn" class="btn-3d rank-btn-style" onclick="Leaderboard.show(event)">LEADERBOARD</button>
             </div>
 
-            <div id="controls-hint"></div>
+            <div id="controls-hint">
+                <div class="control-row">
+                    <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
+                    <span class="control-label">MOVE</span>
+                </div>
+                <div class="control-row">
+                    <div><span class="key-cap key-jump">↑</span></div>
+                    <span class="control-label">JUMP</span>
+                    <div style="width:15px"></div>
+                    <div><span class="key-cap key-roll">↓</span></div>
+                    <span class="control-label">ROLL</span>
+                </div>
+                <div class="swipe-hint"><span class="swipe-icon">👆</span> (Swipe on Screen)</div>
+            </div>
         </div>
 
         <div id="pause-screen" class="menu-screen hidden">
@@ -343,6 +366,21 @@
             </div>
         </div>
 
+        <div id="char-screen" class="menu-screen hidden">
+            <div class="store-container">
+                <div class="store-header">
+                    <div id="char-title" class="game-title" style="font-size:30px; margin:0; transform:none; animation:none;">CHARACTERS</div>
+                    <div class="store-balance">
+                        <div class="css-coin" style="width:25px; height:25px;"></div>
+                        <span id="char-coin-count">0</span>
+                    </div>
+                </div>
+                <div id="char-grid" class="store-grid">
+                    </div>
+                <button id="char-close-btn" class="btn-3d lb-close-btn" style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="CharSys.close(event)">BACK</button>
+            </div>
+        </div>
+
         <div id="game-over" class="menu-screen hidden">
             <div class="game-title" style="font-size: 48px; color: #ff6b6b;">CRASHED!</div>
             <div id="final-score-box" style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; text-align:center; margin-bottom:15px;">
@@ -375,7 +413,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V20 - Camera & UI Fixes)
+ * FREE RUN: MOON CHASER (V23 - V20 Base + Character System)
  */
 
 const CONFIG = {
@@ -400,6 +438,14 @@ const CONFIG = {
         skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
         coin: 0xFFD700, ground: 0x333344
     }
+};
+
+// --- V23: Character Data ---
+const CHARACTERS = {
+    'default': { name: "Runner", color: 0xE0E0E0, glow: 0x00FFFF, cost: 0 },
+    'crimson': { name: "Crimson", color: 0xE74C3C, glow: 0xFFD700, cost: 500 },
+    'stealth': { name: "Stealth", color: 0x2C3E50, glow: 0xFF00FF, cost: 1000 },
+    'golden':  { name: "Midas",   color: 0xFFD700, glow: 0xFFFFFF, cost: 2000 }
 };
 
 const AudioSys = {
@@ -503,6 +549,10 @@ const GameData = {
     coins: 0,
     inventory: { magnet: 0, jetpack: 0 },
     settings: { autoMagnet: false, autoJetpack: false },
+    // V23: New Data for Chars
+    unlockedChars: ['default'],
+    curChar: 'default',
+    
     load: function() {
         const saved = localStorage.getItem('moonChaser_save');
         if (saved) {
@@ -511,6 +561,8 @@ const GameData = {
                 this.coins = parsed.coins || 0;
                 this.inventory = parsed.inventory || { magnet: 0, jetpack: 0 };
                 this.settings = parsed.settings || { autoMagnet: false, autoJetpack: false };
+                this.unlockedChars = parsed.unlockedChars || ['default'];
+                this.curChar = parsed.curChar || 'default';
             } catch(e) { this.coins = CONFIG.INITIAL_COINS; }
         } else {
             this.coins = CONFIG.INITIAL_COINS;
@@ -518,7 +570,13 @@ const GameData = {
         }
         if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins;
     },
-    save: function() { localStorage.setItem('moonChaser_save', JSON.stringify({ coins: this.coins, inventory: this.inventory, settings: this.settings })); },
+    save: function() { localStorage.setItem('moonChaser_save', JSON.stringify({ 
+        coins: this.coins, 
+        inventory: this.inventory, 
+        settings: this.settings,
+        unlockedChars: this.unlockedChars,
+        curChar: this.curChar
+    })); },
     addCoins: function(amount) { this.coins += amount; this.save(); if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins; }
 };
 
@@ -544,7 +602,8 @@ const LANG = {
         storeBtn: "SUPPLY STORE", storeTitle: "SUPPLY STORE", storeBack: "BACK",
         itemNameMag: "Magnet Start", itemDescMag: "Start run with Magnet", itemOwn: "Owned: ", autoUse: "Auto-Use",
         itemNameJet: "Jetpack Start", itemDescJet: "Start run with Jetpack",
-        pauseTitle: "PAUSED", resume: "RESUME", pauseMenu: "MAIN MENU"
+        pauseTitle: "PAUSED", resume: "RESUME", pauseMenu: "MAIN MENU",
+        charTitle: "CHARACTERS", charBack: "BACK", owned: "OWNED", equip: "EQUIP", equipped: "EQUIPPED", buy: "BUY"
     },
     cn: {
         title: "自由奔跑<br>逐月者",
@@ -567,7 +626,8 @@ const LANG = {
         storeBtn: "补给商店", storeTitle: "补给商店", storeBack: "返回",
         itemNameMag: "开局磁铁", itemDescMag: "开局自动激活磁铁", itemOwn: "拥有: ", autoUse: "自动使用",
         itemNameJet: "开局飞行", itemDescJet: "开局自动使用喷气背包",
-        pauseTitle: "游戏暂停", resume: "继续游戏", pauseMenu: "返回主菜单"
+        pauseTitle: "游戏暂停", resume: "继续游戏", pauseMenu: "返回主菜单",
+        charTitle: "角色选择", charBack: "返回", owned: "已拥有", equip: "装备", equipped: "使用中", buy: "购买"
     }
 };
 let currentLang = 'en';
@@ -669,10 +729,15 @@ function createTrainModel(isMoving) {
 }
 
 function createPlayerModel() {
+    if(player) scene.remove(player); // Clear old
+
+    // V23: Use character data
+    const charData = CHARACTERS[GameData.curChar] || CHARACTERS['default'];
+
     player = new THREE.Group();
-    const matArmor = new THREE.MeshPhongMaterial({ color: 0xE0E0E0, shininess: 60 });
+    const matArmor = new THREE.MeshPhongMaterial({ color: charData.color, shininess: 60 });
     const matDark = new THREE.MeshPhongMaterial({ color: 0x2C3E50 });
-    const matGlow = new THREE.MeshBasicMaterial({ color: 0x00FFFF });
+    const matGlow = new THREE.MeshBasicMaterial({ color: charData.glow });
     const matOrange = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
 
     const headGroup = new THREE.Group();
@@ -858,7 +923,7 @@ function startGame(e) {
     });
     activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0;
     for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
-    for(let i = 10; i < 150; i+=25) { spawnBuilding(-i); }
+    for (let i = 10; i < 150; i+=25) { spawnBuilding(-i); }
 
     player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
     camera.position.set(0, 5, 8); camera.rotation.set(-0.3, 0, 0);
@@ -1099,6 +1164,70 @@ function updateWorldGen() {
     clean(activeObstacles); clean(activeCoins); clean(activeMagnets); clean(activeJetpacks); clean(activeDecorations);
 }
 
+// --- V23: CHARACTER SYSTEM LOGIC ---
+const CharSys = {
+    show: function(e) {
+        if(e && e.stopPropagation) e.stopPropagation();
+        this.render();
+        // Hide Main Menu to prevent bugs
+        document.getElementById('main-menu').classList.add('hidden');
+        document.getElementById('char-screen').classList.remove('hidden');
+    },
+    close: function(e) {
+        if(e && e.stopPropagation) e.stopPropagation();
+        document.getElementById('char-screen').classList.add('hidden');
+        document.getElementById('main-menu').classList.remove('hidden');
+    },
+    render: function() {
+        const grid = document.getElementById('char-grid');
+        grid.innerHTML = '';
+        document.getElementById('char-coin-count').innerText = GameData.coins;
+        document.getElementById('char-title').innerText = LANG[currentLang].charTitle;
+        document.getElementById('char-close-btn').innerText = LANG[currentLang].charBack;
+
+        for (const [id, data] of Object.entries(CHARACTERS)) {
+            const isOwned = GameData.unlockedChars.includes(id);
+            const isEquipped = GameData.curChar === id;
+            
+            let btnClass = isEquipped ? "buy-btn equipped" : (isOwned ? "buy-btn select" : "buy-btn");
+            let btnText = isEquipped ? LANG[currentLang].equipped : (isOwned ? LANG[currentLang].equip : `${LANG[currentLang].buy} ${data.cost}`);
+            // Use window.CharSys to ensure global access in onclick string
+            let clickAction = isOwned ? `CharSys.equip('${id}')` : `CharSys.buy('${id}')`;
+
+            grid.innerHTML += `
+                <div class="store-item">
+                    <div class="item-icon" style="color:#${new THREE.Color(data.color).getHexString()}">🤖</div>
+                    <div class="item-name">${data.name}</div>
+                    <div class="item-desc">${isOwned ? LANG[currentLang].owned : ''}</div>
+                    <button class="${btnClass}" onclick="${clickAction}">
+                        ${!isOwned ? '<div class="css-coin" style="width:15px; height:15px;"></div>' : ''} ${btnText}
+                    </button>
+                </div>
+            `;
+        }
+    },
+    buy: function(id) {
+        const char = CHARACTERS[id];
+        if (GameData.coins >= char.cost) {
+            GameData.coins -= char.cost;
+            GameData.unlockedChars.push(id);
+            GameData.curChar = id;
+            GameData.save();
+            AudioSys.playCoin();
+            this.render();
+            // Update player model in background immediately
+            createPlayerModel();
+        }
+    },
+    equip: function(id) {
+        GameData.curChar = id;
+        GameData.save();
+        this.render();
+        createPlayerModel();
+    }
+};
+window.CharSys = CharSys;
+
 // --- GLOBAL BINDINGS ---
 const Store = {
     updateUI: function() {
@@ -1265,8 +1394,11 @@ function updateLocalization() {
     document.getElementById('resume-btn').innerText = t.resume;
     document.getElementById('pause-home-btn').innerText = t.pauseMenu;
 
+    // V23: Char Screen Loc
+    document.getElementById('char-btn').innerText = t.charTitle;
     if(!document.getElementById('leaderboard-screen').classList.contains('hidden')) Leaderboard.render();
     if(!document.getElementById('store-screen').classList.contains('hidden')) Store.updateUI();
+    if(!document.getElementById('char-screen').classList.contains('hidden')) CharSys.render();
 }
 
 function setupInputs() {
