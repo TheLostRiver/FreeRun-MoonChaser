@@ -69,7 +69,6 @@
         }
         #coin-display { font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px 0 #000; }
         
-        /* 新增：倍率显示 */
         #coin-multiplier {
             font-size: 16px; font-weight: 900; font-family: monospace;
             color: #00FFFF; margin-left: 8px; font-style: italic;
@@ -359,7 +358,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V15 - Coin Multiplier System)
+ * FREE RUN: MOON CHASER (V16 - Camera Fixed)
  */
 
 const CONFIG = {
@@ -902,6 +901,9 @@ function animate() {
                 }
             });
             
+            // --- V16 New Camera Logic ---
+            let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
+            
             if (jetpackActive) {
                 jetpackTimer -= delta;
                 document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
@@ -909,9 +911,10 @@ function animate() {
                 
                 player.userData.pack.visible = true;
                 const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
-                const targetY = CONFIG.JETPACK_HEIGHT + hoverWave;
-                player.position.y += (targetY - player.position.y) * 5 * delta;
+                const targetH = CONFIG.JETPACK_HEIGHT + hoverWave;
+                player.position.y += (targetH - player.position.y) * 5 * delta;
                 
+                // Flight Animation
                 player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
                 player.userData.flames.forEach(f => {
                     f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
@@ -921,6 +924,11 @@ function animate() {
                 player.userData.lLeg.rotation.x = -0.2 + hoverWave * 0.2; player.userData.rLeg.rotation.x = -0.2 + hoverWave * 0.2;
                 player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
                 isJumping = false; isSliding = false;
+
+                // ** Jetpack Camera Settings **
+                targetY = 11;       // Higher
+                targetZOffset = 14; // Further back
+                targetRotX = -0.45; // Look down
             } else {
                 player.userData.pack.visible = false;
                 player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
@@ -943,6 +951,13 @@ function animate() {
                 }
             }
 
+            // ** Smooth Camera Lerp **
+            camera.position.y += (targetY - camera.position.y) * 3 * delta;
+            const desiredZ = player.position.z + targetZOffset;
+            camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
+            camera.position.x = player.position.x * 0.4;
+            camera.rotation.x += (targetRotX - camera.rotation.x) * 3 * delta;
+
             if (magnetActive) {
                 magnetTimer -= delta;
                 document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
@@ -959,12 +974,6 @@ function animate() {
 
             updateWorldGen();
             checkCollisions();
-            
-            const camTargetY = jetpackActive ? 8 : 5;
-            camera.position.z = player.position.z + 8;
-            camera.position.x = player.position.x * 0.4;
-            camera.position.y += (camTargetY - camera.position.y) * 2 * delta;
-
             score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
             updateHUD();
         } 
@@ -1018,12 +1027,11 @@ function activateJetpack() {
     AudioSys.playPowerup();
 }
 
-// --- V15 修正：动态金币倍率逻辑 ---
+// --- V15: Coin Multiplier ---
 function collectCoin(coin) { 
     if(coin.userData.collected) return; 
     coin.userData.collected = true; 
     
-    // 计算倍率：基础速度15，每增加5速度倍率+1
     const currentMultiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
     coins += currentMultiplier; 
     
@@ -1114,8 +1122,11 @@ function goHome(e) {
     document.getElementById('main-menu').classList.remove('hidden');
     
     if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
+    
+    // Reset Camera
     camera.position.set(0, 4, 10); 
     camera.rotation.set(-0.1, 0, 0); 
+    
     if(player) {
         player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
         if(player.userData.pack) player.userData.pack.visible = false;
@@ -1153,7 +1164,6 @@ function updateHUD() {
     const multElem = document.getElementById('coin-multiplier');
     if(multElem) {
         multElem.innerText = "x" + multiplier;
-        // 动态颜色：低倍率青色，中倍率黄色，高倍率红色
         multElem.style.color = multiplier > 5 ? '#FF0000' : (multiplier > 2 ? '#FFFF00' : '#00FFFF');
     }
 
