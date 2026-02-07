@@ -360,7 +360,7 @@
 
 <script>
 /**
- * FREE RUN: MOON CHASER (V17 - Fairness Fixed & Balanced)
+ * FREE RUN: MOON CHASER (V18 - Perfect Camera Angle)
  */
 
 const CONFIG = {
@@ -379,9 +379,9 @@ const CONFIG = {
     COST_JETPACK: 200,
     INITIAL_COINS: 500,
     CYCLE_DURATION: 120, 
-    // New Balance Configs
-    MOVING_TRAIN_SPAWN_OFFSET: 180, // Spawn much further back to avoid "pop-in"
-    TRAIN_COOLDOWN: 3000, // Min ms between moving train spawns
+    // Balance
+    MOVING_TRAIN_SPAWN_OFFSET: 180, 
+    TRAIN_COOLDOWN: 3000, 
     COLORS: {
         skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
         coin: 0xFFD700, ground: 0x333344
@@ -549,10 +549,7 @@ const activeCoins = [];
 const activeMagnets = [];
 const activeJetpacks = [];
 const activeDecorations = []; 
-let world = { 
-    lastSpawnZ: 0,
-    lastMovingTrainTime: 0 // New Logic: Track last moving train
-};
+let world = { lastSpawnZ: 0 };
 
 let targetLane = 1;
 let isJumping = false, isSliding = false;
@@ -755,7 +752,6 @@ function spawnBuilding(zPos) {
     scene.add(b2); activeDecorations.push(b2);
 }
 
-// --- V17 CRITICAL FIX: FAIR SPAWNING ---
 function spawnObstacle(zPos) {
     if (jetpackActive) { for(let i=0; i<3; i++) spawnCoins(CONFIG.LANES[i], zPos, CONFIG.JETPACK_HEIGHT); }
     const rand = Math.random();
@@ -770,19 +766,13 @@ function spawnObstacle(zPos) {
     } else {
         let mesh;
         const obstacleType = Math.random();
-        
-        // ** Moving Train Logic Update **
-        // 1. Check Cooldown
-        // 2. Only spawn if we haven't recently spawned one
         let canSpawnTrain = (now - world.lastMovingTrainTime) > CONFIG.TRAIN_COOLDOWN;
         
-        if (canSpawnTrain && obstacleType < 0.25) { // Lowered chance slightly
-            // Spawn Moving Train FAR AWAY (zPos - 180) to give reaction time
+        if (canSpawnTrain && obstacleType < 0.25) { 
             mesh = createTrainModel(true); 
             mesh.position.set(laneX, 0, zPos - CONFIG.MOVING_TRAIN_SPAWN_OFFSET);
             world.lastMovingTrainTime = now;
         } else if (obstacleType < 0.6) {
-            // Static Train
             mesh = createTrainModel(false); mesh.position.set(laneX, 0, zPos);
         } else if (obstacleType < 0.8) {
             const group = new THREE.Group();
@@ -795,9 +785,7 @@ function spawnObstacle(zPos) {
             mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.5), new THREE.MeshLambertMaterial({color:0xE67E22}));
             mesh.position.set(laneX, 0.4, zPos);
         }
-        
         if(mesh.isMesh || mesh.isGroup) { 
-            // Ensure shadow casting for groups too
             mesh.traverse(child => { if(child.isMesh) { child.castShadow = true; child.receiveShadow = true; }});
         }
         scene.add(mesh); activeObstacles.push(mesh);
@@ -843,7 +831,7 @@ function startGame(e) {
     magnetActive = false; magnetTimer = 0;
     jetpackActive = false; jetpackTimer = 0;
     isPaused = false; 
-    world.lastMovingTrainTime = 0; // Reset logic
+    world.lastMovingTrainTime = 0; 
 
     document.getElementById('magnet-status').classList.remove('active');
     document.getElementById('jetpack-status').classList.remove('active');
@@ -871,7 +859,6 @@ function startGame(e) {
 }
 window.startGame = startGame;
 
-// --- DAY/NIGHT CYCLE LOGIC ---
 function updateDayNightCycle(delta) {
     cycleTime += delta;
     const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION; 
@@ -951,7 +938,10 @@ function animate() {
                 player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
                 isJumping = false; isSliding = false;
 
-                targetY = 11; targetZOffset = 14; targetRotX = -0.45;
+                // V18 Camera Tweaks
+                targetY = 8;        
+                targetZOffset = 10; 
+                targetRotX = -0.3;  
             } else {
                 player.userData.pack.visible = false;
                 player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
