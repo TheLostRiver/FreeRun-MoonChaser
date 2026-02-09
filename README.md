@@ -80,6 +80,54 @@
 
 ---
 
+## 📥 How to Play Offline / 如何下载并离线运行
+
+如果你不想依赖网络，或者想把游戏保存在电脑上随时游玩，请按照以下步骤操作（非常简单，无需懂代码！）：
+
+**If you want to play offline without an internet connection, follow these simple steps (No coding skills required!):**
+
+### 1. 下载游戏 (Download)
+1.  在页面顶部找到绿色的 **Code** 按钮。
+    *(Find the green **Code** button at the top of this page.)*
+2.  点击它，然后选择 **Download ZIP**。
+    *(Click it and select **Download ZIP**.)*
+3.  等待下载完成。
+    *(Wait for the download to finish.)*
+
+### 2. 解压文件 (Unzip)
+⚠️ **重要提示 / IMPORTANT**:
+请不要直接双击 ZIP 包里的文件！你必须先**解压**。
+*Do not run the file directly inside the ZIP! You must **Extract/Unzip** it first.*
+
+1.  找到下载好的 `MoonChaser-main.zip`。
+2.  右键点击，选择 **“全部解压缩” (Extract All)**。
+3.  记住解压后的文件夹位置。
+
+### 3. 开始游戏 (Start Game)
+1.  进入解压后的文件夹。
+2.  找到名为 **`index.html`** 的文件。
+    *(Find the file named **`index.html`**.)*
+3.  **双击它！** 游戏会自动在你的默认浏览器（Chrome, Edge, Safari 等）中打开。
+    *(**Double-click it!** The game will launch in your default browser.)*
+
+---
+
+### ❓ 常见问题 (Troubleshooting)
+
+* **Q: 打开是黑屏怎么办？ (Black Screen?)**
+    * A: 请确保你使用的是现代浏览器，如 **Google Chrome**, **Microsoft Edge**, 或 **Firefox**。不要使用 IE 浏览器。
+    * *Ensure you are using a modern browser like Chrome, Edge, or Firefox. Do not use Internet Explorer.*
+
+* **Q: 为什么没有声音？ (No Sound?)**
+    * A: 浏览器通常禁止自动播放声音。请点击游戏画面上的 **"TAP TO PLAY"** 按钮，或者点击右上角的 喇叭 🔊 图标来开启声音。
+    * *Browsers block auto-playing audio. Click the **"TAP TO PLAY"** button or the speaker 🔊 icon to enable sound.*
+
+* **Q: 游戏进度会保存吗？ (Will progress be saved?)**
+    * A: 是的！即使离线运行，你的金币和角色解锁记录也会保存在浏览器的缓存中。但如果你清理了浏览器缓存，存档可能会丢失。
+    * *Yes! Your coins and unlocked characters are saved in your browser's local storage.*
+
+---
+
 ### 👨‍💻 开发者留言 (Dev Note)
 
 这是一个致力于探索 Web 3D 极限的项目。从最初的简单方块，到现在的动态云层、粒子特效和复杂碰撞逻辑，每一行代码都倾注了对游戏开发的热爱。
