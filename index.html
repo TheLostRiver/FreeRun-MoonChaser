@@ -2768,7 +2768,9 @@
 			targetLane = 1; speed = CONFIG.PLAYER_SPEED_BASE;
 			score = 0; coins = 0; distance = 0; survivalTime = 0;
 			isJumping = false; isSliding = false; verticalVelocity = 0;
-			cycleTime = 0;
+
+			// 🔥🔥🔥 核心修复：不要重置为 0，而是重置为配置的起始时间！ 🔥🔥🔥
+			cycleTime = CONFIG.CYCLE_DURATION * CONFIG.START_TIME_OFFSET;
 
 			magnetActive = false; magnetTimer = 0;
 			jetpackActive = false; jetpackTimer = 0;
