@@ -798,14 +798,16 @@
 					PLAY</button>
 				<button id="store-btn" class="btn-3d store-btn-style" onclick="Store.show(event)">SUPPLY
 					STORE</button>
-				<button id="char-btn" class="btn-3d char-btn-style" onclick="CharSys.show(event)">CHARACTERS</button>
+				<button id="char-btn" class="btn-3d char-btn-style"
+					onclick="CharSys.show(event)">CHARACTERS</button>
 				<button id="rank-btn" class="btn-3d rank-btn-style"
 					onclick="Leaderboard.show(event)">LEADERBOARD</button>
 			</div>
 
 			<div id="controls-hint">
 				<div class="control-row">
-					<div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
+					<div><span class="key-cap key-move">←</span> <span
+							class="key-cap key-move">→</span></div>
 					<span class="control-label">MOVE</span>
 				</div>
 				<div class="control-row">
@@ -822,7 +824,8 @@
 		<div id="pause-screen" class="menu-screen hidden">
 			<div class="pause-container">
 				<div id="pause-title" class="pause-title">PAUSED</div>
-				<button id="resume-btn" class="btn-3d resume-btn-style" onclick="togglePause(event)">RESUME</button>
+				<button id="resume-btn" class="btn-3d resume-btn-style"
+					onclick="togglePause(event)">RESUME</button>
 				<button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN
 					MENU</button>
 			</div>
@@ -831,7 +834,8 @@
 		<div id="store-screen" class="menu-screen hidden">
 			<div class="store-container">
 				<div class="store-header">
-					<div class="game-title" style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY
+					<div class="game-title"
+						style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY
 						STORE</div>
 					<div class="store-balance">
 						<div class="css-coin" style="width:25px; height:25px;"></div>
@@ -851,7 +855,8 @@
 						</button>
 						<div class="toggle-container">
 							<label class="switch">
-								<input type="checkbox" id="check-mag" onchange="Store.toggle('magnet')">
+								<input type="checkbox" id="check-mag"
+									onchange="Store.toggle('magnet')">
 								<span class="slider"></span>
 							</label>
 							<span id="auto-use-mag">Auto-Use</span>
@@ -869,7 +874,8 @@
 						</button>
 						<div class="toggle-container">
 							<label class="switch">
-								<input type="checkbox" id="check-jet" onchange="Store.toggle('jetpack')">
+								<input type="checkbox" id="check-jet"
+									onchange="Store.toggle('jetpack')">
 								<span class="slider"></span>
 							</label>
 							<span id="auto-use-jet">Auto-Use</span>
@@ -877,7 +883,8 @@
 					</div>
 				</div>
 				<button id="store-close-btn" class="btn-3d lb-close-btn"
-					style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="closeStore(event)">BACK</button>
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
+					onclick="closeStore(event)">BACK</button>
 			</div>
 		</div>
 
@@ -895,7 +902,8 @@
 				<div id="char-grid" class="store-grid">
 				</div>
 				<button id="char-close-btn" class="btn-3d lb-close-btn"
-					style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="CharSys.close(event)">BACK</button>
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
+					onclick="CharSys.close(event)">BACK</button>
 			</div>
 		</div>
 
@@ -914,19 +922,20 @@
 
 		<div id="leaderboard-screen" class="menu-screen hidden">
 			<div class="leaderboard-container">
-				<div id="lb-title-text" class="game-title" style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS
+				<div id="lb-title-text" class="game-title"
+					style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS
 				</div>
 				<table class="lb-table">
 					<thead>
 						<tr>
 							<th id="th-rank">RANK</th>
-							<th id="th-name" onclick="Leaderboard.sort('name')">NAME <span id="sort-name"
-									class="sort-icon"></span></th>
+							<th id="th-name" onclick="Leaderboard.sort('name')">NAME <span
+									id="sort-name" class="sort-icon"></span></th>
 							<th id="th-score" onclick="Leaderboard.sort('score')">SCORE
 								<span id="sort-score" class="sort-icon">▼</span>
 							</th>
-							<th id="th-time" onclick="Leaderboard.sort('time')">TIME <span id="sort-time"
-									class="sort-icon"></span></th>
+							<th id="th-time" onclick="Leaderboard.sort('time')">TIME <span
+									id="sort-time" class="sort-icon"></span></th>
 						</tr>
 					</thead>
 					<tbody id="lb-body"></tbody>
@@ -2042,30 +2051,26 @@
 				if (!isPaused) {
 					updateDayNightCycle(delta);
 
-					// 传入 delta 和 玩家位置 (让云知道什么时候重置)
+					// 1. 云层更新
 					CloudSystem.update(delta, player.position.z);
 
-					// --- 更新特效粒子 ---
+					// 2. 特效更新
 					VFX.update(delta);
 
-					// --- 新增：无敌时间逻辑 ---
+					// 3. 无敌闪烁逻辑
 					if (isInvincible) {
 						invincibleTimer -= delta;
-
-						// 闪烁逻辑：利用时间戳，每 0.1 秒切换一次可见性
-						// 频率：100ms
 						const blinkSpeed = 100;
 						player.visible = Math.floor(Date.now() / blinkSpeed) % 2 === 0;
-
 						if (invincibleTimer <= 0) {
 							isInvincible = false;
-							player.visible = true; // 恢复常态
+							player.visible = true;
 						}
 					} else {
-						// 确保非无敌状态下人物始终可见
 						if (!player.visible) player.visible = true;
 					}
 
+					// 4. 移动距离计算
 					const moveDist = speed * delta;
 					player.position.z -= moveDist;
 					distance += moveDist;
@@ -2075,26 +2080,44 @@
 					const tx = CONFIG.LANES[targetLane];
 					player.position.x += (tx - player.position.x) * 10 * delta;
 
+					// 5. 障碍物移动 (火车)
 					activeObstacles.forEach(obs => {
 						if (obs.userData.isMovingTrain) {
 							obs.position.z += obs.userData.trainSpeed * delta;
 						}
 					});
 
-					let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
+					// =========================================
+					// 核心修复：相机与地面检测逻辑
+					// =========================================
 
-					// 1. 持续检测脚下是否有火车 (实时更新地面高度)
+					// A. 先检测地面 (这会更新全局变量 currentGroundY)
 					checkGroundStatus();
 
+					// B. 基于地面计算相机目标 (关键点：这里必须动态计算!)
+					// 如果在地面(0)，targetY = 5; 如果在车顶(4)，targetY = 9
+					let targetY = currentGroundY + 5;
+					let targetZOffset = 8;
+					let targetRotX = -0.1;
+
+					// C. 喷气背包逻辑 (如果有，强制覆盖相机参数)
 					if (jetpackActive) {
 						jetpackTimer -= delta;
 						document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
-						if (jetpackTimer <= 0) { jetpackActive = false; document.getElementById('jetpack-status').classList.remove('active'); }
+						if (jetpackTimer <= 0) {
+							jetpackActive = false;
+							document.getElementById('jetpack-status').classList.remove('active');
+						}
 
 						player.userData.pack.visible = true;
 						const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
 						const targetH = CONFIG.JETPACK_HEIGHT + hoverWave;
 						player.position.y += (targetH - player.position.y) * 5 * delta;
+
+						// 强制覆盖相机高度
+						targetY = 12;
+						targetZOffset = 14;
+						targetRotX = -0.45;
 
 						player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
 						player.userData.flames.forEach(f => {
@@ -2106,49 +2129,36 @@
 						player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
 						isJumping = false; isSliding = false;
 
-						// V20 Camera Fix: Higher & Tilted Down
-						targetY = 12;       // 拉高高度，越过头顶
-						targetZOffset = 14; // 稍微往后拉一点点
-						targetRotX = -0.45; // 向下俯视，把角色压到屏幕下方
 					} else {
+						// 普通状态逻辑
 						player.userData.pack.visible = false;
 						player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15;
 
-						// --- 物理重力核心修改 START ---
 						if (isJumping) {
 							player.position.y += verticalVelocity;
 							verticalVelocity -= CONFIG.GRAVITY;
 
-							// 落地判定：现在的地面是动态的 currentGroundY
+							// 落地判定：使用 currentGroundY
 							if (player.position.y <= currentGroundY) {
 								player.position.y = currentGroundY;
 								isJumping = false;
-								verticalVelocity = 0; // 重置速度
-
-								// 可选：落地微尘特效
-								// VFX.spawnDust(player.position); 
+								verticalVelocity = 0;
 							}
 						} else {
-							// 非跳跃状态 (跑动中)
+							// 跑动中：处理下落
 							if (player.position.y > currentGroundY) {
-								// 如果我们在空中 (比如跑出了火车边缘)，施加重力
-								player.position.y -= CONFIG.GRAVITY * 15; // 下落速度稍微快一点，手感更好
-
-								// 落到新地面
-								if (player.position.y < currentGroundY) {
-									player.position.y = currentGroundY;
-								}
+								player.position.y -= CONFIG.GRAVITY * 15;
+								if (player.position.y < currentGroundY) player.position.y = currentGroundY;
 							} else if (player.position.y < currentGroundY) {
-								// 修正：如果被某种逻辑压得比地面还低，强制拉回来
 								player.position.y = currentGroundY;
 							}
 						}
-						// --- 物理重力核心修改 END ---
 
 						if (isSliding) {
 							slideTimer -= delta; player.scale.y = 0.5;
 							if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
 						}
+
 						if (!isJumping && !isSliding) {
 							const time = Date.now() * 0.015;
 							player.userData.lLeg.rotation.x = 0; player.userData.rLeg.rotation.x = 0;
@@ -2157,12 +2167,7 @@
 						}
 					}
 
-					camera.position.y += (targetY - camera.position.y) * 3 * delta;
-					const desiredZ = player.position.z + targetZOffset;
-					camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
-					camera.position.x = player.position.x * 0.4;
-					camera.rotation.x += (targetRotX - camera.rotation.x) * 3 * delta;
-
+					// 6. 磁铁与金币逻辑 (你的版本里有，保持不变)
 					if (magnetActive) {
 						magnetTimer -= delta;
 						document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
@@ -2170,52 +2175,41 @@
 							magnetActive = false;
 							document.getElementById('magnet-status').classList.remove('active');
 						}
-
 						activeCoins.forEach(coin => {
-							// 1. 触发吸引：判定距离保持不变
 							if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) {
 								coin.userData.attracted = true;
 							}
-
-							// 2. 吸引过程：这是修改的核心
 							if (coin.userData.attracted) {
-								// 目标位置：玩家胸口高度 (y+1)
 								const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
-
-								// --- 关键修改点 START ---
-								// 动态计算飞行速度：
-								// 基础速度 50 (保证低速时吸得快)
-								// 额外速度：玩家当前速度 * 2.5 (保证高速时，金币比玩家快得多，像导弹一样追上来)
 								const flySpeed = Math.max(50, speed * 2.5);
-
 								const direction = target.clone().sub(coin.position).normalize();
 								const moveStep = flySpeed * delta;
-
-								// 移动金币
 								coin.position.add(direction.multiplyScalar(moveStep));
-
-								// 判定收集：
-								// 距离小于 1.5 (稍微放宽判定范围)
-								// 或者：当前距离已经小于一步移动的距离 (防止因为速度太快一帧穿透过去)
 								const dist = coin.position.distanceTo(target);
-								if (dist < 1.5 || dist < moveStep) {
-									collectCoin(coin);
-								}
-								// --- 关键修改点 END ---
+								if (dist < 1.5 || dist < moveStep) collectCoin(coin);
 							}
 						});
 					}
 
 					updateWorldGen();
-
-					// --- 在检测玩家碰撞之前，先检测火车碰撞 ---
 					checkTrainInteractions();
-
 					checkCollisions();
-					score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
+
+					score = Math.floor(distance * 10) + (coins * 50);
+					survivalTime += delta;
 					updateHUD();
+
+					// =========================================
+					// D. 应用相机位置 (此时 targetY 绝对是正确的)
+					// =========================================
+					camera.position.y += (targetY - camera.position.y) * 3 * delta;
+					const desiredZ = player.position.z + targetZOffset;
+					camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
+					camera.position.x = player.position.x * 0.4;
+					camera.rotation.x += (targetRotX - camera.rotation.x) * 3 * delta;
 				}
 			} else {
+				// 游戏结束时的空转镜头
 				const t = Date.now() * 0.002;
 				player.position.y = Math.sin(t) * 0.1;
 				player.rotation.y += 0.01;
@@ -2226,9 +2220,9 @@
 		function checkGroundStatus() {
 			// 默认地面是 0
 			let newGroundY = 0;
-			onTrain = false;
+			onTrain = false; // 重置状态
 
-			// 获取玩家当前的包围盒 (稍微缩小一点，防止站在边缘空气上)
+			// 获取玩家当前的中心点
 			const pBox = new THREE.Box3().setFromObject(player);
 			const center = new THREE.Vector3();
 			pBox.getCenter(center);
@@ -2237,16 +2231,15 @@
 			const footCheckX = center.x;
 			const footCheckZ = center.z;
 
-			// 遍历所有障碍物，寻找脚下的火车
+			// 遍历所有障碍物
 			for (let obs of activeObstacles) {
-				// 必须是火车 (静止或移动)
-				// 注意：这里假设你的 createTrainModel 里设置了 userData.isObstacle = true
-				// 为了区分栏杆和火车，建议在 createTrainModel 里加个 userData.isPlatform = true
-				// 或者通过高度判断: 火车的高度通常 > 2
-
-				// 这里我们需要在 createTrainModel 里加个标记，或者直接判断几何体大小
-				// 简单起见，我们判断 obs.userData.isObstacle 且高度较高
-				const isTrain = obs.userData.isObstacle === true && obs.position.y > 1;
+				// === 修复的核心点 START ===
+				// 判定是否为火车：
+				// 1. 它是移动火车 (isMovingTrain)
+				// 2. 或者它是障碍物且虽然Y是0但包围盒很高 (BoxMaxY > 2)
+				// 为了简单稳定，我们直接检查 userData 里的标记
+				const isTrain = obs.userData.isMovingTrain === true || (obs.userData.isObstacle === true && !obs.userData.isHigh);
+				// === 修复的核心点 END ===
 
 				if (isTrain) {
 					const obsBox = new THREE.Box3().setFromObject(obs);
@@ -2254,26 +2247,29 @@
 					// 扩展一下判定范围，让上车稍微容易一点点
 					obsBox.expandByScalar(0.2);
 
-					// 核心判定：
-					// 1. 玩家在火车的 X/Z 平面范围内
-					// 2. 玩家目前的高度高于 (火车顶部 - 容差)
-					// 火车顶部大约是 4.0 (2.25 + 1.75)
-					const trainTopY = 4.0;
-
+					// 核心判定：玩家在火车的 X/Z 平面范围内
 					if (footCheckX >= obsBox.min.x && footCheckX <= obsBox.max.x &&
 						footCheckZ >= obsBox.min.z && footCheckZ <= obsBox.max.z) {
 
-						// 如果我们已经在车顶，或者正在跳跃且高度足够
-						if (player.position.y >= trainTopY - 0.5) {
+						// 火车顶部高度固定为 4.0
+						const trainTopY = 4.0;
+
+						// 如果我们已经在车顶附近 (加一点容差，防止掉下去)
+						// 只要脚底板高度 > 3.0 就认为在车顶范围
+						if (player.position.y >= 3.0) {
 							newGroundY = trainTopY;
 							onTrain = true;
-							break; // 找到了一个支撑点，不用找了
+							break; // 找到了支撑点
 						}
 					}
 				}
 			}
 
+			// 更新全局变量
 			currentGroundY = newGroundY;
+
+			// 调试日志：如果你还是觉得没效果，取消下面这行的注释，按F12看控制台
+			// if(onTrain) console.log("On Train! GroundY:", currentGroundY);
 		}
 
 		function checkCollisions() {
