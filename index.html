@@ -748,62 +748,79 @@
 		}
 
 		/* =========================================
-       移动端完美适配 V2 (Mobile Fix Final)
-       请替换掉之前的 @media 代码
+       移动端按钮终极优化 V3 (Mobile Buttons Final)
+       请替换掉之前所有的 @media 代码
        ========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* 1. 标题优化：大小适中，位置下移 */
+			/* --- 1. 标题优化 --- */
 			.game-title {
 				font-size: 36px !important;
 				margin-top: 80px !important;
-				/* 避开左上角按钮 */
 				margin-bottom: 30px !important;
 				line-height: 1.2;
-				width: 100%;
+				width: 90% !important;
 			}
 
-			/* 2. 核心修复：绿色开始按钮 */
+			/* --- 2. 核心修复：绿色开始大按钮 --- */
+			/* 目标：变成一个大气横向的胶囊按钮 */
 			.play-btn-style {
-				width: 80% !important;
-				/* 强制宽度占屏幕 80%，解决过窄问题 */
-				max-width: 300px !important;
-				/* 限制最大宽度 */
-				padding: 15px 0 !important;
-				/* 关键：去掉左右巨大的内边距！ */
-				font-size: 24px !important;
-				margin-bottom: 20px !important;
+				width: 85% !important;
+				/* 宽度撑开 */
+				max-width: 320px !important;
+				/* 限制最大宽 */
+
+				/* 关键：增加上下的内边距，让按钮变高、变饱满 */
+				padding: 18px 0 !important;
+
+				/* 关键：设置合理的圆角，形成胶囊形状，而不是正圆 */
+				border-radius: 50px !important;
+
+				font-size: 28px !important;
+				/* 加大字号 */
+				margin-bottom: 25px !important;
+				/* 增加底部间距 */
 				white-space: nowrap !important;
-				/* 关键：强制文字不换行！ */
 				display: block !important;
-				/* 确保独占一行 */
 				margin-left: auto !important;
-				/* 确保水平居中 */
 				margin-right: auto !important;
+				box-shadow: 0 6px 0 #008000 !important;
+				/* 增强立体感 */
 			}
 
-			/* 3. 菜单小按钮组 (商店、角色、排行) */
+			/* 点击效果也要同步修改圆角 */
+			.play-btn-style:active {
+				box-shadow: 0 2px 0 #008000 !important;
+				transform: translateY(4px);
+			}
+
+			/* --- 3. 菜单小按钮组 (商店、角色、排行) --- */
+			/* 目标：比开始按钮稍小一点的胶囊按钮 */
 			.store-btn-style,
 			.char-btn-style,
 			.rank-btn-style {
-				width: 60% !important;
-				max-width: 240px !important;
-				padding: 10px 0 !important;
-				/* 同样去掉左右内边距 */
-				font-size: 16px !important;
-				margin-bottom: 10px !important;
+				width: 70% !important;
+				/* 比开始按钮稍微窄一点，体现层级 */
+				max-width: 260px !important;
+
+				padding: 12px 0 !important;
+				/* 高度也稍微降低 */
+				border-radius: 40px !important;
+				/* 胶囊圆角 */
+
+				font-size: 18px !important;
+				/* 字号适中 */
+				margin-bottom: 12px !important;
 				white-space: nowrap !important;
-				/* 强制不换行 */
 				display: block !important;
 				margin-left: auto !important;
 				margin-right: auto !important;
 			}
 
-			/* 4. 顶部功能按钮微调 */
+			/* --- 4. 其他元素的适配保持不变 --- */
 			.top-btn {
 				top: 15px !important;
 				transform: scale(0.9);
-				/* 稍微缩小一点 */
 			}
 
 			#lang-btn {
@@ -814,24 +831,25 @@
 				left: 90px !important;
 			}
 
-			/* 5. 底部操作提示框 */
 			#controls-hint {
-				width: 90% !important;
-				padding: 8px !important;
-				bottom: 20px !important;
-				/* 稍微往上提一点，防止被手机下巴遮挡 */
+				width: 95% !important;
+				padding: 10px 5px !important;
+				bottom: 15px !important;
 			}
 
-			/* 隐藏无用的键盘提示 */
 			#controls-hint .control-row {
 				display: none !important;
 			}
 
-			/* 优化滑动提示文字 */
 			.swipe-hint {
-				font-size: 16px !important;
+				font-size: 15px !important;
 				margin: 0 !important;
-				padding: 5px 0 !important;
+			}
+
+			#hud-panel {
+				top: 5px !important;
+				right: 5px !important;
+				transform: scale(0.7);
 			}
 		}
 	</style>
