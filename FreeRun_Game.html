@@ -905,7 +905,7 @@
 		 */
 
 		const CONFIG = {
-			LANES: [-2.5, 0, 2.5],
+			LANES: [-3.5, 0, 3.5],
 			TRACK_LENGTH: 200,
 			PLAYER_SPEED_BASE: 15,
 			PLAYER_SPEED_MAX: 50,
@@ -1505,8 +1505,8 @@
 			const rGeo = new THREE.BoxGeometry(0.2, 0.1, CONFIG.TRACK_LENGTH);
 			const rMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
 			CONFIG.LANES.forEach(x => {
-				let r1 = new THREE.Mesh(rGeo, rMat); r1.position.set(x - 0.6, 0.05, 0); seg.add(r1);
-				let r2 = new THREE.Mesh(rGeo, rMat); r2.position.set(x + 0.6, 0.05, 0); seg.add(r2);
+				let r1 = new THREE.Mesh(rGeo, rMat); r1.position.set(x - 1.0, 0.05, 0); seg.add(r1);
+				let r2 = new THREE.Mesh(rGeo, rMat); r2.position.set(x + 1.6, 0.05, 0); seg.add(r2);
 			});
 			seg.position.z = zPos;
 			scene.add(seg);
