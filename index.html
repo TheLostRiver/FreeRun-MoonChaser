@@ -748,9 +748,9 @@
 		}
 
 		/* =========================================
-		移动端适配 V8 (排行榜溢出终极修复)
-		核心改动：table-layout: fixed + 强制宽度
-		========================================= */
+       移动端适配 V9 (修复排行榜溢出 - 钉死版)
+       核心原理：左右距离钉死，强制清零 min-width
+       ========================================= */
 		@media only screen and (max-width: 768px) {
 
 			/* --- 1. 基础UI适配 (保持完美) --- */
@@ -761,7 +761,6 @@
 				width: 100% !important;
 			}
 
-			/* 按钮样式重置 */
 			.play-btn-style,
 			.store-btn-style,
 			.char-btn-style,
@@ -794,7 +793,6 @@
 				box-shadow: 0 5px 0 #006400 !important;
 			}
 
-			/* 顶部按钮 */
 			.top-btn {
 				top: 20px !important;
 				transform: scale(0.9) !important;
@@ -809,7 +807,6 @@
 				left: 120px !important;
 			}
 
-			/* 底部提示 */
 			#controls-hint {
 				width: 90% !important;
 				bottom: 20px !important;
@@ -832,96 +829,87 @@
 				transform: scale(0.65);
 			}
 
-			/* --- 2. 核心修复：排行榜/弹窗溢出 --- */
+			/* --- 2. 核心修复：排行榜/弹窗 (采用左右钉死策略) --- */
 
-			/* A. 强制限制弹窗容器宽度 */
 			#rankings-overlay,
 			#store-overlay,
 			#char-overlay,
 			#game-over-screen {
-				box-sizing: border-box !important;
-				/* 边框算在宽度内 */
-				width: 90vw !important;
-				/* 强制宽度为视口宽度的 90% */
-				max-width: 340px !important;
-				/* 最大不超过 340px */
-				min-width: 0 !important;
-				/* 允许无限缩小 */
+				/* A. 关键属性：强制定位方式 */
+				position: fixed !important;
+				/* 必须是 fixed，防止随页面滚动 */
 
-				left: 50% !important;
+				/* B. 关键属性：左右钉死 */
+				/* 既然居中算不对，我们就强制它距离左右各 15px */
+				/* 这样宽度会被物理限制在屏幕中间 */
+				left: 15px !important;
+				right: 15px !important;
+				width: auto !important;
+				/* 让宽度自动填满左右的空隙 */
+
+				/* C. 垂直居中保持不变 */
 				top: 50% !important;
-				transform: translate(-50%, -50%) !important;
+				transform: translateY(-50%) !important;
+				/* 只做垂直偏移 */
 
-				padding: 15px 10px !important;
-				/* 左右内边距减小到 10px */
+				/* D. 彻底清除“最小宽度”毒瘤 */
+				min-width: 0 !important;
+				/* 这行代码价值千金，杀掉 PC 端的 min-width */
+				max-width: none !important;
+
+				box-sizing: border-box !important;
+				padding: 15px 5px !important;
+				/* 减小内边距 */
 				overflow: hidden !important;
-				/* 防止任何内容溢出边框 */
 			}
 
-			/* B. 表格强制布局 (Key Fix!) */
+			/* E. 表格强制适配 */
 			#rankings-overlay table {
 				width: 100% !important;
-
-				/* 关键代码：固定布局算法。 */
-				/* 这会让表格严格服从 width: 100%，绝对不会被内容撑开！ */
+				min-width: 0 !important;
+				/* 表格自己也不许有最小宽度 */
 				table-layout: fixed !important;
-
-				margin-bottom: 15px !important;
-				border-collapse: collapse !important;
+				margin-bottom: 10px !important;
 			}
 
-			/* C. 单元格内容优化 */
 			#rankings-overlay th,
 			#rankings-overlay td {
-				font-size: 12px !important;
-				/* 缩小字号 */
-				padding: 4px 2px !important;
-				/* 极小的内边距 */
+				font-size: 11px !important;
+				/* 字号再小一点，保平安 */
+				padding: 4px 1px !important;
+				/* 极限压缩间距 */
 				text-align: center !important;
-
-				/* 防止文字换行导致高度崩坏，或者文字溢出 */
 				white-space: nowrap !important;
 				overflow: hidden !important;
 				text-overflow: ellipsis !important;
-				/* 超出显示省略号(...) */
 			}
 
-			/* D. 针对排行榜各列微调宽度 (可选) */
-			/* 第一列(排名)给窄一点，给名字留空间 */
+			/* 调整列宽比例 */
 			#rankings-overlay th:nth-child(1),
 			#rankings-overlay td:nth-child(1) {
-				width: 15% !important;
+				width: 12% !important;
 			}
 
-			/* 第二列(名字) */
 			#rankings-overlay th:nth-child(2),
 			#rankings-overlay td:nth-child(2) {
-				width: 35% !important;
+				width: 38% !important;
 			}
 
-			/* 第三列(分数) */
 			#rankings-overlay th:nth-child(3),
 			#rankings-overlay td:nth-child(3) {
 				width: 25% !important;
 			}
 
-			/* 第四列(时长) */
 			#rankings-overlay th:nth-child(4),
 			#rankings-overlay td:nth-child(4) {
 				width: 25% !important;
 			}
 
-			/* E. 弹窗标题与按钮 */
 			#rankings-overlay h2 {
-				font-size: 22px !important;
-				margin-top: 0 !important;
-				margin-bottom: 10px !important;
-			}
-
-			#rankings-overlay button {
-				width: 100px !important;
-				font-size: 16px !important;
-				padding: 8px 0 !important;
+				font-size: 20px !important;
+				margin-top: 5px !important;
+				white-space: nowrap !important;
+				/* 防止标题换行撑开 */
 			}
 		}
 	</style>
