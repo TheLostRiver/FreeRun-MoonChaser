@@ -8,7 +8,7 @@
 
 ### 🎮 游戏简介 (Introduction)
 
-**Free Run: Moon Chaser** 是一款基于 WebGL (Three.js) 构建的高性能 3D 无尽跑酷游戏。体验从清晨到日落的**动态昼夜循环**，在高速移动的列车和障碍物之间穿梭。本项目完全由 **HTML5 + JavaScript** 编写，无需下载，打开浏览器即可体验 3A 级的流畅跑酷！
+**Free Run: Moon Chaser** 是一款基于 WebGL (Three.js) 构建的高性能 3D 无尽跑酷游戏。体验从清晨到日落的**动态昼夜循环**，在高速移动的列车和障碍物之间穿梭。本项目完全由 **HTML5 + JavaScript** 编写，无需下载，打开浏览器即可体验出色的流畅跑酷！
 
 **Free Run: Moon Chaser** is a high-performance 3D endless runner built with WebGL (Three.js). Experience a dynamic day-night cycle, dodge speeding trains, and master the art of parkour. No download required—play instantly in your browser!
 
