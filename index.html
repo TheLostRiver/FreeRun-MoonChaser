@@ -115,6 +115,8 @@
 			flex-direction: column;
 			align-items: flex-end;
 			transition: opacity 0.3s;
+			/* 🔥🔥🔥 新增这行：确保它在最上层 🔥🔥🔥 */
+    			z-index: 1000;
 		}
 
 		#score-display {
@@ -972,7 +974,8 @@
 			#hud-panel {
 				top: 5px !important;
 				right: 5px !important;
-				transform: scale(0.65);
+				transform: scale(0.7);
+				transform-origin: top right; /* 🔥 关键：确保它是贴着右上角缩放的，不会跑偏 */
 			}
 
 			/* --- 2. 核心修复：排行榜/弹窗 (采用左右钉死策略) --- */
