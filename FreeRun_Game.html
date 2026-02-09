@@ -1,590 +1,1080 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Free Run: Moon Chaser (V23)</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@900&display=swap');
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<title>Free Run: Moon Chaser (V23)</title>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
+		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@900&display=swap');
 
-        body { margin: 0; overflow: hidden; background-color: #050520; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; }
-        #gameCanvas { display: block; width: 100vw; height: 100vh; }
-        
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-        
-        .btn-3d {
-            pointer-events: auto; border: none; outline: none; cursor: pointer;
-            font-family: 'Titan One', 'Noto Sans SC', sans-serif; text-transform: uppercase;
-            transition: transform 0.1s;
-        }
-        .btn-3d:active { transform: translateY(4px); box-shadow: 0 0px 0 rgba(0,0,0,0.2) !important; }
+		body {
+			margin: 0;
+			overflow: hidden;
+			background-color: #050520;
+			font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+			user-select: none;
+			-webkit-user-select: none;
+		}
 
-        /* 顶部按钮组 */
-        .top-btn {
-            position: absolute; top: 20px; 
-            background: rgba(0, 0, 0, 0.6); color: white; 
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            padding: 8px 16px; border-radius: 20px; 
-            font-weight: bold; font-size: 14px; 
-            z-index: 500; cursor: pointer; pointer-events: auto;
-        }
-        #lang-btn { left: 20px; }
-        #sound-btn { left: 120px; width: 40px; text-align: center; padding: 8px 0; }
+		#gameCanvas {
+			display: block;
+			width: 100vw;
+			height: 100vh;
+		}
 
-        #pause-btn {
-            position: absolute; top: 20px; left: 180px; 
-            background: rgba(230, 126, 34, 0.8); color: white;
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            width: 40px; height: 40px; border-radius: 50%;
-            font-weight: bold; font-size: 18px; line-height: 36px; text-align: center;
-            z-index: 500; cursor: pointer; pointer-events: auto;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        #pause-btn:hover { background: #d35400; }
+		#ui-layer {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			pointer-events: none;
+		}
 
-        /* HUD */
-        #hud-panel {
-            position: absolute; top: 20px; right: 20px;
-            display: flex; flex-direction: column; align-items: flex-end;
-            transition: opacity 0.3s;
-        }
-        #score-display { 
-            font-family: 'Titan One', 'Noto Sans SC', cursive; 
-            font-size: 36px; color: white;
-            text-shadow: 3px 3px 0 #000; margin-bottom: 5px;
-        }
-        .coin-container {
-            display: flex; align-items: center;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 5px 12px; border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            margin-bottom: 5px;
-        }
-        .css-coin {
-            width: 20px; height: 20px;
-            background: linear-gradient(135deg, #ffd700, #ffaa00);
-            border: 2px solid #fff; border-radius: 50%;
-            margin-right: 8px; box-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
-        }
-        #coin-display { font-size: 20px; font-weight: bold; color: #FFD700; text-shadow: 1px 1px 0 #000; }
-        
-        #coin-multiplier {
-            font-size: 16px; font-weight: 900; font-family: monospace;
-            color: #00FFFF; margin-left: 8px; font-style: italic;
-            text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
-        }
+		.btn-3d {
+			pointer-events: auto;
+			border: none;
+			outline: none;
+			cursor: pointer;
+			font-family: 'Titan One', 'Noto Sans SC', sans-serif;
+			text-transform: uppercase;
+			transition: transform 0.1s;
+		}
 
-        #speed-indicator {
-            font-family: 'Titan One', monospace; color: #00FFFF; font-size: 18px; 
-            text-shadow: 1px 1px 0 #000; margin-bottom: 10px; font-style: italic;
-        }
-        #status-bars { display: flex; flex-direction: column; gap: 5px; margin-top: 5px; align-items: flex-end; }
-        .status-bar {
-            display: flex; align-items: center;
-            padding: 5px 15px; border-radius: 20px; border: 2px solid #fff;
-            transform: scale(0); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            transform-origin: right center; margin-bottom: 5px;
-        }
-        .status-bar.active { transform: scale(1); }
-        .status-icon { font-size: 20px; margin-right: 8px; }
-        .status-timer { color: white; font-weight: 900; font-family: monospace; font-size: 18px; }
-        #jetpack-status { background: linear-gradient(90deg, #3498db, #2980b9); }
-        #magnet-status { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+		.btn-3d:active {
+			transform: translateY(4px);
+			box-shadow: 0 0px 0 rgba(0, 0, 0, 0.2) !important;
+		}
 
-        .menu-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(25, 25, 112, 0.4); backdrop-filter: blur(4px);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            pointer-events: auto; transition: opacity 0.3s; z-index: 150;
-            cursor: default;
-        }
-        .hidden { display: none !important; }
+		/* 顶部按钮组 */
+		.top-btn {
+			position: absolute;
+			top: 20px;
+			background: rgba(0, 0, 0, 0.6);
+			color: white;
+			border: 2px solid rgba(255, 255, 255, 0.5);
+			padding: 8px 16px;
+			border-radius: 20px;
+			font-weight: bold;
+			font-size: 14px;
+			z-index: 500;
+			cursor: pointer;
+			pointer-events: auto;
+		}
 
-        .game-title {
-            font-family: 'Titan One', 'Noto Sans SC', sans-serif;
-            font-weight: 900; font-size: 60px; line-height: 1.2; text-align: center;
-            color: #FFD700;
-            text-shadow: 2px 2px 0 #000, 0 5px 0 #d35400, 0 8px 10px rgba(0,0,0,0.5);
-            transform: skewY(-3deg); margin-bottom: 40px; animation: floatTitle 3s ease-in-out infinite;
-        }
-        @keyframes floatTitle {
-            0%, 100% { transform: skewY(-3deg) translateY(0); }
-            50% { transform: skewY(-3deg) translateY(-10px); }
-        }
+		#lang-btn {
+			left: 20px;
+		}
 
-        .menu-content { display: flex; flex-direction: column; align-items: center; z-index: 160; }
+		#sound-btn {
+			left: 120px;
+			width: 40px;
+			text-align: center;
+			padding: 8px 0;
+		}
 
-        .play-btn-style { background-color: #2ecc71; color: white; font-size: 28px; padding: 15px 60px; border-radius: 50px; box-shadow: 0 6px 0 #219150; margin-bottom: 20px; }
-        .store-btn-style { background-color: #9b59b6; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #8e44ad; margin-bottom: 10px; }
-        /* 角色按钮样式 */
-        .char-btn-style { background-color: #e67e22; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #d35400; margin-bottom: 10px; }
-        
-        .rank-btn-style { background-color: #f39c12; color: white; font-size: 18px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #d35400; margin-bottom: 20px; }
-        .retry-btn-style { background-color: #e74c3c; color: white; font-size: 24px; padding: 12px 40px; border-radius: 50px; box-shadow: 0 6px 0 #c0392b; }
-        .home-btn-style { margin-top: 15px; background: #3498db; padding: 10px 20px; font-size: 16px; border-radius: 20px; color: white; box-shadow: 0 4px 0 #2980b9; }
-        
-        #pause-screen { z-index: 400; background: rgba(0, 0, 0, 0.6); }
-        .pause-container {
-            background: rgba(20, 20, 50, 0.9); padding: 40px 60px;
-            border-radius: 20px; border: 3px solid #00FFFF;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-            text-align: center; display: flex; flex-direction: column; gap: 20px;
-        }
-        .pause-title {
-            font-family: 'Titan One', 'Noto Sans SC'; font-size: 48px; color: white;
-            text-shadow: 0 0 10px #00FFFF; margin-bottom: 10px;
-        }
-        .resume-btn-style {
-            background-color: #2ecc71; color: white; font-size: 24px; padding: 10px 40px;
-            border-radius: 30px; box-shadow: 0 5px 0 #27ae60;
-        }
+		#pause-btn {
+			position: absolute;
+			top: 20px;
+			left: 180px;
+			background: rgba(230, 126, 34, 0.8);
+			color: white;
+			border: 2px solid rgba(255, 255, 255, 0.5);
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			font-weight: bold;
+			font-size: 18px;
+			line-height: 36px;
+			text-align: center;
+			z-index: 500;
+			cursor: pointer;
+			pointer-events: auto;
+			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+		}
 
-        /* Generic Modal (Store & Characters) */
-        #store-screen, #char-screen { z-index: 250; }
-        .store-container {
-            background: rgba(10, 10, 40, 0.95); padding: 25px;
-            border-radius: 20px; border: 2px solid #00FFFF;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
-            width: 90%; max-width: 600px;
-            max-height: 85vh; overflow-y: auto;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .store-header {
-            width: 100%; display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; flex-shrink: 0;
-        }
-        .store-balance { display: flex; align-items: center; font-size: 24px; color: #FFD700; font-weight: bold; }
-        .store-grid { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; width: 100%; padding-bottom: 20px; }
-        .store-item {
-            background: rgba(255,255,255,0.05); width: 220px;
-            border-radius: 15px; padding: 15px;
-            display: flex; flex-direction: column; align-items: center;
-            border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s;
-        }
-        .store-item:hover { transform: translateY(-5px); border-color: #00FFFF; }
-        .item-icon { font-size: 40px; margin-bottom: 10px; }
-        .item-name { color: white; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-        .item-desc { color: #aaa; font-size: 12px; text-align: center; margin-bottom: 15px; height: 30px;}
-        .buy-btn {
-            background: #27ae60; color: white; border: none;
-            padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; gap: 5px; margin-bottom: 10px;
-            box-shadow: 0 4px 0 #219150;
-        }
-        .buy-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #219150; }
-        .buy-btn:disabled { background: #555; box-shadow: none; cursor: not-allowed; opacity: 0.6; }
-        
-        /* 角色按钮特定样式 */
-        .buy-btn.equipped { background: #555; cursor: default; box-shadow: none; }
-        .buy-btn.select { background: #e67e22; box-shadow: 0 4px 0 #d35400; }
-        
-        .item-owned { color: #00FFFF; font-size: 14px; margin-bottom: 8px; font-weight: bold; }
-        .toggle-container { display: flex; align-items: center; gap: 10px; color: white; font-size: 14px; }
-        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .4s; border-radius: 20px;
-        }
-        .slider:before {
-            position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
-            background-color: white; transition: .4s; border-radius: 50%;
-        }
-        input:checked + .slider { background-color: #00FFFF; }
-        input:checked + .slider:before { transform: translateX(20px); }
+		#pause-btn:hover {
+			background: #d35400;
+		}
 
-        #main-menu-coins {
-            position: absolute; top: 20px; right: 20px;
-            font-size: 24px; color: #FFD700; font-weight: bold;
-            text-shadow: 2px 2px 0 #000; display: flex; align-items: center; gap: 5px;
-        }
+		/* HUD */
+		#hud-panel {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			transition: opacity 0.3s;
+		}
 
-        #controls-hint {
-            margin-top: 30px; 
-            background: rgba(10, 10, 30, 0.85); 
-            padding: 20px 30px;
-            border-radius: 20px; 
-            border: 2px solid rgba(0, 255, 255, 0.3);
-            display: flex; flex-direction: column; gap: 15px; align-items: center;
-            pointer-events: none;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-        }
-        .control-row { 
-            display: flex; align-items: center; gap: 15px; 
-            color: #fff; font-weight: bold; font-size: 14px;
-            font-family: 'Titan One', sans-serif;
-            text-shadow: 1px 1px 2px black; 
-        }
-        .key-cap {
-            display: inline-block; min-width: 32px; height: 32px;
-            background: #222; color: #eee;
-            font-family: 'Segoe UI', sans-serif; font-weight: 900; line-height: 30px; text-align: center;
-            padding: 0 8px; border-radius: 6px;
-            border-bottom: 4px solid #000; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-            transform: translateY(0);
-        }
-        .key-move { border-bottom-color: #008B8B; color: #00FFFF; }
-        .key-jump { border-bottom-color: #B8860B; color: #FFD700; }
-        .key-roll { border-bottom-color: #8B008B; color: #FF00FF; }
-        .control-label { color: #ddd; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
-        .swipe-hint { display: flex; align-items: center; gap: 8px; color: #aaa; font-size: 12px; font-style: italic; margin-top: 5px; }
-        .swipe-icon { font-size: 16px; }
-        
-        #leaderboard-screen { z-index: 200; }
-        .leaderboard-container {
-            background: rgba(0, 0, 0, 0.9); padding: 20px; border-radius: 25px; border: 3px solid #FFD700;
-            width: 90%; max-width: 450px; max-height: 70vh; overflow-y: auto;
-        }
-        .lb-table { width: 100%; border-collapse: collapse; color: white; font-family: sans-serif; }
-        .lb-table th { color: #FFD700; padding: 10px; border-bottom: 2px solid #555; cursor: pointer; }
-        .lb-table td { padding: 8px; text-align: center; border-bottom: 1px solid #333; }
-        .lb-close-btn { margin-top: 25px; background: #e74c3c; font-size: 20px; padding: 10px 40px; border-radius: 30px; box-shadow: 0 5px 0 #c0392b; flex-shrink: 0; }
-        .sort-icon { font-size: 14px; margin-left: 8px; opacity: 0.8; color: #FFD700; }
+		#score-display {
+			font-family: 'Titan One', 'Noto Sans SC', cursive;
+			font-size: 36px;
+			color: white;
+			text-shadow: 3px 3px 0 #000;
+			margin-bottom: 5px;
+		}
 
-        #name-input { font-size: 20px; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; }
-        
-        #game-over { z-index: 300; }
-    </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+		.coin-container {
+			display: flex;
+			align-items: center;
+			background: rgba(0, 0, 0, 0.5);
+			padding: 5px 12px;
+			border-radius: 15px;
+			border: 1px solid rgba(255, 255, 255, 0.2);
+			margin-bottom: 5px;
+		}
+
+		.css-coin {
+			width: 20px;
+			height: 20px;
+			background: linear-gradient(135deg, #ffd700, #ffaa00);
+			border: 2px solid #fff;
+			border-radius: 50%;
+			margin-right: 8px;
+			box-shadow: 0 0 5px rgba(255, 215, 0, 0.6);
+		}
+
+		#coin-display {
+			font-size: 20px;
+			font-weight: bold;
+			color: #FFD700;
+			text-shadow: 1px 1px 0 #000;
+		}
+
+		#coin-multiplier {
+			font-size: 16px;
+			font-weight: 900;
+			font-family: monospace;
+			color: #00FFFF;
+			margin-left: 8px;
+			font-style: italic;
+			text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+		}
+
+		#speed-indicator {
+			font-family: 'Titan One', monospace;
+			color: #00FFFF;
+			font-size: 18px;
+			text-shadow: 1px 1px 0 #000;
+			margin-bottom: 10px;
+			font-style: italic;
+		}
+
+		#status-bars {
+			display: flex;
+			flex-direction: column;
+			gap: 5px;
+			margin-top: 5px;
+			align-items: flex-end;
+		}
+
+		.status-bar {
+			display: flex;
+			align-items: center;
+			padding: 5px 15px;
+			border-radius: 20px;
+			border: 2px solid #fff;
+			transform: scale(0);
+			transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+			transform-origin: right center;
+			margin-bottom: 5px;
+		}
+
+		.status-bar.active {
+			transform: scale(1);
+		}
+
+		.status-icon {
+			font-size: 20px;
+			margin-right: 8px;
+		}
+
+		.status-timer {
+			color: white;
+			font-weight: 900;
+			font-family: monospace;
+			font-size: 18px;
+		}
+
+		#jetpack-status {
+			background: linear-gradient(90deg, #3498db, #2980b9);
+		}
+
+		#magnet-status {
+			background: linear-gradient(90deg, #e74c3c, #c0392b);
+		}
+
+		.menu-screen {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(25, 25, 112, 0.4);
+			backdrop-filter: blur(4px);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			pointer-events: auto;
+			transition: opacity 0.3s;
+			z-index: 150;
+			cursor: default;
+		}
+
+		.hidden {
+			display: none !important;
+		}
+
+		.game-title {
+			font-family: 'Titan One', 'Noto Sans SC', sans-serif;
+			font-weight: 900;
+			font-size: 60px;
+			line-height: 1.2;
+			text-align: center;
+			color: #FFD700;
+			text-shadow: 2px 2px 0 #000, 0 5px 0 #d35400, 0 8px 10px rgba(0, 0, 0, 0.5);
+			transform: skewY(-3deg);
+			margin-bottom: 40px;
+			animation: floatTitle 3s ease-in-out infinite;
+		}
+
+		@keyframes floatTitle {
+
+			0%,
+			100% {
+				transform: skewY(-3deg) translateY(0);
+			}
+
+			50% {
+				transform: skewY(-3deg) translateY(-10px);
+			}
+		}
+
+		.menu-content {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			z-index: 160;
+		}
+
+		.play-btn-style {
+			background-color: #2ecc71;
+			color: white;
+			font-size: 28px;
+			padding: 15px 60px;
+			border-radius: 50px;
+			box-shadow: 0 6px 0 #219150;
+			margin-bottom: 20px;
+		}
+
+		.store-btn-style {
+			background-color: #9b59b6;
+			color: white;
+			font-size: 18px;
+			padding: 10px 40px;
+			border-radius: 30px;
+			box-shadow: 0 5px 0 #8e44ad;
+			margin-bottom: 10px;
+		}
+
+		/* 角色按钮样式 */
+		.char-btn-style {
+			background-color: #e67e22;
+			color: white;
+			font-size: 18px;
+			padding: 10px 40px;
+			border-radius: 30px;
+			box-shadow: 0 5px 0 #d35400;
+			margin-bottom: 10px;
+		}
+
+		.rank-btn-style {
+			background-color: #f39c12;
+			color: white;
+			font-size: 18px;
+			padding: 10px 40px;
+			border-radius: 30px;
+			box-shadow: 0 5px 0 #d35400;
+			margin-bottom: 20px;
+		}
+
+		.retry-btn-style {
+			background-color: #e74c3c;
+			color: white;
+			font-size: 24px;
+			padding: 12px 40px;
+			border-radius: 50px;
+			box-shadow: 0 6px 0 #c0392b;
+		}
+
+		.home-btn-style {
+			margin-top: 15px;
+			background: #3498db;
+			padding: 10px 20px;
+			font-size: 16px;
+			border-radius: 20px;
+			color: white;
+			box-shadow: 0 4px 0 #2980b9;
+		}
+
+		#pause-screen {
+			z-index: 400;
+			background: rgba(0, 0, 0, 0.6);
+		}
+
+		.pause-container {
+			background: rgba(20, 20, 50, 0.9);
+			padding: 40px 60px;
+			border-radius: 20px;
+			border: 3px solid #00FFFF;
+			box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+			text-align: center;
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+		}
+
+		.pause-title {
+			font-family: 'Titan One', 'Noto Sans SC';
+			font-size: 48px;
+			color: white;
+			text-shadow: 0 0 10px #00FFFF;
+			margin-bottom: 10px;
+		}
+
+		.resume-btn-style {
+			background-color: #2ecc71;
+			color: white;
+			font-size: 24px;
+			padding: 10px 40px;
+			border-radius: 30px;
+			box-shadow: 0 5px 0 #27ae60;
+		}
+
+		/* Generic Modal (Store & Characters) */
+		#store-screen,
+		#char-screen {
+			z-index: 250;
+		}
+
+		.store-container {
+			background: rgba(10, 10, 40, 0.95);
+			padding: 25px;
+			border-radius: 20px;
+			border: 2px solid #00FFFF;
+			box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+			width: 90%;
+			max-width: 600px;
+			max-height: 85vh;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.store-header {
+			width: 100%;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 20px;
+			border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+			padding-bottom: 10px;
+			flex-shrink: 0;
+		}
+
+		.store-balance {
+			display: flex;
+			align-items: center;
+			font-size: 24px;
+			color: #FFD700;
+			font-weight: bold;
+		}
+
+		.store-grid {
+			display: flex;
+			gap: 20px;
+			justify-content: center;
+			flex-wrap: wrap;
+			width: 100%;
+			padding-bottom: 20px;
+		}
+
+		.store-item {
+			background: rgba(255, 255, 255, 0.05);
+			width: 220px;
+			border-radius: 15px;
+			padding: 15px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			border: 1px solid rgba(255, 255, 255, 0.1);
+			transition: transform 0.2s;
+		}
+
+		.store-item:hover {
+			transform: translateY(-5px);
+			border-color: #00FFFF;
+		}
+
+		.item-icon {
+			font-size: 40px;
+			margin-bottom: 10px;
+		}
+
+		.item-name {
+			color: white;
+			font-weight: bold;
+			font-size: 18px;
+			margin-bottom: 5px;
+		}
+
+		.item-desc {
+			color: #aaa;
+			font-size: 12px;
+			text-align: center;
+			margin-bottom: 15px;
+			height: 30px;
+		}
+
+		.buy-btn {
+			background: #27ae60;
+			color: white;
+			border: none;
+			padding: 8px 20px;
+			border-radius: 20px;
+			font-weight: bold;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+			margin-bottom: 10px;
+			box-shadow: 0 4px 0 #219150;
+		}
+
+		.buy-btn:active {
+			transform: translateY(2px);
+			box-shadow: 0 2px 0 #219150;
+		}
+
+		.buy-btn:disabled {
+			background: #555;
+			box-shadow: none;
+			cursor: not-allowed;
+			opacity: 0.6;
+		}
+
+		/* 角色按钮特定样式 */
+		.buy-btn.equipped {
+			background: #555;
+			cursor: default;
+			box-shadow: none;
+		}
+
+		.buy-btn.select {
+			background: #e67e22;
+			box-shadow: 0 4px 0 #d35400;
+		}
+
+		.item-owned {
+			color: #00FFFF;
+			font-size: 14px;
+			margin-bottom: 8px;
+			font-weight: bold;
+		}
+
+		.toggle-container {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			color: white;
+			font-size: 14px;
+		}
+
+		.switch {
+			position: relative;
+			display: inline-block;
+			width: 40px;
+			height: 20px;
+		}
+
+		.switch input {
+			opacity: 0;
+			width: 0;
+			height: 0;
+		}
+
+		.slider {
+			position: absolute;
+			cursor: pointer;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #ccc;
+			transition: .4s;
+			border-radius: 20px;
+		}
+
+		.slider:before {
+			position: absolute;
+			content: "";
+			height: 16px;
+			width: 16px;
+			left: 2px;
+			bottom: 2px;
+			background-color: white;
+			transition: .4s;
+			border-radius: 50%;
+		}
+
+		input:checked+.slider {
+			background-color: #00FFFF;
+		}
+
+		input:checked+.slider:before {
+			transform: translateX(20px);
+		}
+
+		#main-menu-coins {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			font-size: 24px;
+			color: #FFD700;
+			font-weight: bold;
+			text-shadow: 2px 2px 0 #000;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		#controls-hint {
+			margin-top: 30px;
+			background: rgba(10, 10, 30, 0.85);
+			padding: 20px 30px;
+			border-radius: 20px;
+			border: 2px solid rgba(0, 255, 255, 0.3);
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+			align-items: center;
+			pointer-events: none;
+			box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+			backdrop-filter: blur(5px);
+		}
+
+		.control-row {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+			color: #fff;
+			font-weight: bold;
+			font-size: 14px;
+			font-family: 'Titan One', sans-serif;
+			text-shadow: 1px 1px 2px black;
+		}
+
+		.key-cap {
+			display: inline-block;
+			min-width: 32px;
+			height: 32px;
+			background: #222;
+			color: #eee;
+			font-family: 'Segoe UI', sans-serif;
+			font-weight: 900;
+			line-height: 30px;
+			text-align: center;
+			padding: 0 8px;
+			border-radius: 6px;
+			border-bottom: 4px solid #000;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+			transform: translateY(0);
+		}
+
+		.key-move {
+			border-bottom-color: #008B8B;
+			color: #00FFFF;
+		}
+
+		.key-jump {
+			border-bottom-color: #B8860B;
+			color: #FFD700;
+		}
+
+		.key-roll {
+			border-bottom-color: #8B008B;
+			color: #FF00FF;
+		}
+
+		.control-label {
+			color: #ddd;
+			font-size: 12px;
+			letter-spacing: 1px;
+			text-transform: uppercase;
+		}
+
+		.swipe-hint {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			color: #aaa;
+			font-size: 12px;
+			font-style: italic;
+			margin-top: 5px;
+		}
+
+		.swipe-icon {
+			font-size: 16px;
+		}
+
+		#leaderboard-screen {
+			z-index: 200;
+		}
+
+		.leaderboard-container {
+			background: rgba(0, 0, 0, 0.9);
+			padding: 20px;
+			border-radius: 25px;
+			border: 3px solid #FFD700;
+			width: 90%;
+			max-width: 450px;
+			max-height: 70vh;
+			overflow-y: auto;
+		}
+
+		.lb-table {
+			width: 100%;
+			border-collapse: collapse;
+			color: white;
+			font-family: sans-serif;
+		}
+
+		.lb-table th {
+			color: #FFD700;
+			padding: 10px;
+			border-bottom: 2px solid #555;
+			cursor: pointer;
+		}
+
+		.lb-table td {
+			padding: 8px;
+			text-align: center;
+			border-bottom: 1px solid #333;
+		}
+
+		.lb-close-btn {
+			margin-top: 25px;
+			background: #e74c3c;
+			font-size: 20px;
+			padding: 10px 40px;
+			border-radius: 30px;
+			box-shadow: 0 5px 0 #c0392b;
+			flex-shrink: 0;
+		}
+
+		.sort-icon {
+			font-size: 14px;
+			margin-left: 8px;
+			opacity: 0.8;
+			color: #FFD700;
+		}
+
+		#name-input {
+			font-size: 20px;
+			padding: 10px;
+			border-radius: 10px;
+			text-align: center;
+			margin-bottom: 15px;
+		}
+
+		#loading {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			color: white;
+			font-weight: bold;
+		}
+
+		#game-over {
+			z-index: 300;
+		}
+	</style>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
+
 <body>
 
-    <div id="loading">Loading Engine...</div>
-    <div id="game-container"></div>
+	<div id="loading">Loading Engine...</div>
+	<div id="game-container"></div>
 
-    <div id="ui-layer">
-        <button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
-        <button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
-        <div id="pause-btn" class="hidden" onclick="togglePause(event)">II</div>
+	<div id="ui-layer">
+		<button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
+		<button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
+		<div id="pause-btn" class="hidden" onclick="togglePause(event)">II</div>
 
-        <div id="hud-panel" class="hidden">
-            <div id="score-display">000000</div>
-            <div id="speed-indicator">SPEED: 1.0x</div>
-            <div class="coin-container">
-                <div class="css-coin"></div>
-                <div id="coin-display">0</div>
-                <span id="coin-multiplier">x1</span>
-            </div>
-            
-            <div id="status-bars">
-                <div id="jetpack-status" class="status-bar">
-                    <div class="status-icon">🚀</div>
-                    <div id="jetpack-timer" class="status-timer">08.0s</div>
-                </div>
-                <div id="magnet-status" class="status-bar">
-                    <div class="status-icon">🧲</div>
-                    <div id="magnet-timer" class="status-timer">10.0s</div>
-                </div>
-            </div>
-        </div>
+		<div id="hud-panel" class="hidden">
+			<div id="score-display">000000</div>
+			<div id="speed-indicator">SPEED: 1.0x</div>
+			<div class="coin-container">
+				<div class="css-coin"></div>
+				<div id="coin-display">0</div>
+				<span id="coin-multiplier">x1</span>
+			</div>
 
-        <div id="main-menu" class="menu-screen">
-            <div id="main-menu-coins">
-                <div class="css-coin"></div>
-                <span id="menu-coin-count">0</span>
-            </div>
-            <div class="game-title">FREE RUN<br>MOON CHASER</div>
-            
-            <div class="menu-content">
-                <button id="play-btn" class="btn-3d play-btn-style" onclick="startGame(event)">TAP TO PLAY</button>
-                <button id="store-btn" class="btn-3d store-btn-style" onclick="Store.show(event)">SUPPLY STORE</button>
-                <button id="char-btn" class="btn-3d char-btn-style" onclick="CharSys.show(event)">CHARACTERS</button>
-                <button id="rank-btn" class="btn-3d rank-btn-style" onclick="Leaderboard.show(event)">LEADERBOARD</button>
-            </div>
+			<div id="status-bars">
+				<div id="jetpack-status" class="status-bar">
+					<div class="status-icon">🚀</div>
+					<div id="jetpack-timer" class="status-timer">08.0s</div>
+				</div>
+				<div id="magnet-status" class="status-bar">
+					<div class="status-icon">🧲</div>
+					<div id="magnet-timer" class="status-timer">10.0s</div>
+				</div>
+			</div>
+		</div>
 
-            <div id="controls-hint">
-                <div class="control-row">
-                    <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
-                    <span class="control-label">MOVE</span>
-                </div>
-                <div class="control-row">
-                    <div><span class="key-cap key-jump">↑</span></div>
-                    <span class="control-label">JUMP</span>
-                    <div style="width:15px"></div>
-                    <div><span class="key-cap key-roll">↓</span></div>
-                    <span class="control-label">ROLL</span>
-                </div>
-                <div class="swipe-hint"><span class="swipe-icon">👆</span> (Swipe on Screen)</div>
-            </div>
-        </div>
+		<div id="main-menu" class="menu-screen">
+			<div id="main-menu-coins">
+				<div class="css-coin"></div>
+				<span id="menu-coin-count">0</span>
+			</div>
+			<div class="game-title">FREE RUN<br>MOON CHASER</div>
 
-        <div id="pause-screen" class="menu-screen hidden">
-            <div class="pause-container">
-                <div id="pause-title" class="pause-title">PAUSED</div>
-                <button id="resume-btn" class="btn-3d resume-btn-style" onclick="togglePause(event)">RESUME</button>
-                <button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN MENU</button>
-            </div>
-        </div>
+			<div class="menu-content">
+				<button id="play-btn" class="btn-3d play-btn-style" onclick="startGame(event)">TAP TO
+					PLAY</button>
+				<button id="store-btn" class="btn-3d store-btn-style" onclick="Store.show(event)">SUPPLY
+					STORE</button>
+				<button id="char-btn" class="btn-3d char-btn-style"
+					onclick="CharSys.show(event)">CHARACTERS</button>
+				<button id="rank-btn" class="btn-3d rank-btn-style"
+					onclick="Leaderboard.show(event)">LEADERBOARD</button>
+			</div>
 
-        <div id="store-screen" class="menu-screen hidden">
-            <div class="store-container">
-                <div class="store-header">
-                    <div class="game-title" style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY STORE</div>
-                    <div class="store-balance">
-                        <div class="css-coin" style="width:25px; height:25px;"></div>
-                        <span id="store-coin-count">0</span>
-                    </div>
-                </div>
-                <div class="store-grid">
-                    <div class="store-item">
-                        <div class="item-icon">🧲</div>
-                        <div id="item-name-mag" class="item-name">Magnet Start</div>
-                        <div id="item-desc-mag" class="item-desc">Start run with Magnet active</div>
-                        <div id="item-own-mag" class="item-owned">Owned: 0</div>
-                        <button id="buy-mag-btn" class="buy-btn" onclick="Store.buy('magnet')">
-                            <div class="css-coin" style="width:15px; height:15px;"></div> 100
-                        </button>
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="check-mag" onchange="Store.toggle('magnet')">
-                                <span class="slider"></span>
-                            </label>
-                            <span id="auto-use-mag">Auto-Use</span>
-                        </div>
-                    </div>
-                    <div class="store-item">
-                        <div class="item-icon">🚀</div>
-                        <div id="item-name-jet" class="item-name">Jetpack Start</div>
-                        <div id="item-desc-jet" class="item-desc">Start run with Jetpack active</div>
-                        <div id="item-own-jet" class="item-owned">Owned: 0</div>
-                        <button id="buy-jet-btn" class="buy-btn" onclick="Store.buy('jetpack')">
-                            <div class="css-coin" style="width:15px; height:15px;"></div> 200
-                        </button>
-                        <div class="toggle-container">
-                            <label class="switch">
-                                <input type="checkbox" id="check-jet" onchange="Store.toggle('jetpack')">
-                                <span class="slider"></span>
-                            </label>
-                            <span id="auto-use-jet">Auto-Use</span>
-                        </div>
-                    </div>
-                </div>
-                <button id="store-close-btn" class="btn-3d lb-close-btn" style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="closeStore(event)">BACK</button>
-            </div>
-        </div>
+			<div id="controls-hint">
+				<div class="control-row">
+					<div><span class="key-cap key-move">←</span> <span
+							class="key-cap key-move">→</span></div>
+					<span class="control-label">MOVE</span>
+				</div>
+				<div class="control-row">
+					<div><span class="key-cap key-jump">↑</span></div>
+					<span class="control-label">JUMP</span>
+					<div style="width:15px"></div>
+					<div><span class="key-cap key-roll">↓</span></div>
+					<span class="control-label">ROLL</span>
+				</div>
+				<div class="swipe-hint"><span class="swipe-icon">👆</span> (Swipe on Screen)</div>
+			</div>
+		</div>
 
-        <div id="char-screen" class="menu-screen hidden">
-            <div class="store-container">
-                <div class="store-header">
-                    <div id="char-title" class="game-title" style="font-size:30px; margin:0; transform:none; animation:none;">CHARACTERS</div>
-                    <div class="store-balance">
-                        <div class="css-coin" style="width:25px; height:25px;"></div>
-                        <span id="char-coin-count">0</span>
-                    </div>
-                </div>
-                <div id="char-grid" class="store-grid">
-                    </div>
-                <button id="char-close-btn" class="btn-3d lb-close-btn" style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="CharSys.close(event)">BACK</button>
-            </div>
-        </div>
+		<div id="pause-screen" class="menu-screen hidden">
+			<div class="pause-container">
+				<div id="pause-title" class="pause-title">PAUSED</div>
+				<button id="resume-btn" class="btn-3d resume-btn-style"
+					onclick="togglePause(event)">RESUME</button>
+				<button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN
+					MENU</button>
+			</div>
+		</div>
 
-        <div id="game-over" class="menu-screen hidden">
-            <div class="game-title" style="font-size: 48px; color: #ff6b6b;">CRASHED!</div>
-            <div id="final-score-box" style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; text-align:center; margin-bottom:15px;">
-                <div style="color:white; font-size: 16px;">SCORE</div>
-                <div id="final-score-val" style="color:#FFD700; font-size:36px; font-weight:900;">0</div>
-            </div>
-            <input type="text" id="name-input" placeholder="Enter Name" maxlength="8">
-            <button id="restart-btn" class="btn-3d retry-btn-style">SAVE & RETRY</button>
-            <button id="home-btn" class="btn-3d home-btn-style" onclick="goHome(event)">MAIN MENU</button>
-        </div>
+		<div id="store-screen" class="menu-screen hidden">
+			<div class="store-container">
+				<div class="store-header">
+					<div class="game-title"
+						style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY
+						STORE</div>
+					<div class="store-balance">
+						<div class="css-coin" style="width:25px; height:25px;"></div>
+						<span id="store-coin-count">0</span>
+					</div>
+				</div>
+				<div class="store-grid">
+					<div class="store-item">
+						<div class="item-icon">🧲</div>
+						<div id="item-name-mag" class="item-name">Magnet Start</div>
+						<div id="item-desc-mag" class="item-desc">Start run with Magnet active
+						</div>
+						<div id="item-own-mag" class="item-owned">Owned: 0</div>
+						<button id="buy-mag-btn" class="buy-btn" onclick="Store.buy('magnet')">
+							<div class="css-coin" style="width:15px; height:15px;"></div>
+							100
+						</button>
+						<div class="toggle-container">
+							<label class="switch">
+								<input type="checkbox" id="check-mag"
+									onchange="Store.toggle('magnet')">
+								<span class="slider"></span>
+							</label>
+							<span id="auto-use-mag">Auto-Use</span>
+						</div>
+					</div>
+					<div class="store-item">
+						<div class="item-icon">🚀</div>
+						<div id="item-name-jet" class="item-name">Jetpack Start</div>
+						<div id="item-desc-jet" class="item-desc">Start run with Jetpack active
+						</div>
+						<div id="item-own-jet" class="item-owned">Owned: 0</div>
+						<button id="buy-jet-btn" class="buy-btn" onclick="Store.buy('jetpack')">
+							<div class="css-coin" style="width:15px; height:15px;"></div>
+							200
+						</button>
+						<div class="toggle-container">
+							<label class="switch">
+								<input type="checkbox" id="check-jet"
+									onchange="Store.toggle('jetpack')">
+								<span class="slider"></span>
+							</label>
+							<span id="auto-use-jet">Auto-Use</span>
+						</div>
+					</div>
+				</div>
+				<button id="store-close-btn" class="btn-3d lb-close-btn"
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
+					onclick="closeStore(event)">BACK</button>
+			</div>
+		</div>
 
-        <div id="leaderboard-screen" class="menu-screen hidden">
-            <div class="leaderboard-container">
-                <div id="lb-title-text" class="game-title" style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS</div>
-                <table class="lb-table">
-                    <thead>
-                        <tr>
-                            <th id="th-rank">RANK</th>
-                            <th id="th-name" onclick="Leaderboard.sort('name')">NAME <span id="sort-name" class="sort-icon"></span></th>
-                            <th id="th-score" onclick="Leaderboard.sort('score')">SCORE <span id="sort-score" class="sort-icon">▼</span></th>
-                            <th id="th-time" onclick="Leaderboard.sort('time')">TIME <span id="sort-time" class="sort-icon"></span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="lb-body"></tbody>
-                </table>
-                <button id="lb-close-btn" class="btn-3d lb-close-btn" onclick="document.getElementById('leaderboard-screen').classList.add('hidden')">CLOSE</button>
-            </div>
-        </div>
-    </div>
+		<div id="char-screen" class="menu-screen hidden">
+			<div class="store-container">
+				<div class="store-header">
+					<div id="char-title" class="game-title"
+						style="font-size:30px; margin:0; transform:none; animation:none;">
+						CHARACTERS</div>
+					<div class="store-balance">
+						<div class="css-coin" style="width:25px; height:25px;"></div>
+						<span id="char-coin-count">0</span>
+					</div>
+				</div>
+				<div id="char-grid" class="store-grid">
+				</div>
+				<button id="char-close-btn" class="btn-3d lb-close-btn"
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
+					onclick="CharSys.close(event)">BACK</button>
+			</div>
+		</div>
 
-<script>
-/**
- * FREE RUN: MOON CHASER (V23 - V20 Base + Character System)
- */
+		<div id="game-over" class="menu-screen hidden">
+			<div class="game-title" style="font-size: 48px; color: #ff6b6b;">CRASHED!</div>
+			<div id="final-score-box"
+				style="background:rgba(0,0,0,0.6); padding:15px; border-radius:15px; text-align:center; margin-bottom:15px;">
+				<div style="color:white; font-size: 16px;">SCORE</div>
+				<div id="final-score-val" style="color:#FFD700; font-size:36px; font-weight:900;">0
+				</div>
+			</div>
+			<input type="text" id="name-input" placeholder="Enter Name" maxlength="8">
+			<button id="restart-btn" class="btn-3d retry-btn-style">SAVE & RETRY</button>
+			<button id="home-btn" class="btn-3d home-btn-style" onclick="goHome(event)">MAIN MENU</button>
+		</div>
 
-const CONFIG = {
-    LANES: [-2.5, 0, 2.5],
-    TRACK_LENGTH: 200,
-    PLAYER_SPEED_BASE: 15,
-    PLAYER_SPEED_MAX: 50,
-    SPEED_ACCELERATION: 0.8,
-    JUMP_FORCE: 0.35,
-    GRAVITY: 0.015,
-    MAGNET_DURATION: 10,
-    JETPACK_DURATION: 8,
-    JETPACK_HEIGHT: 7, 
-    MAGNET_RANGE: 15,
-    COST_MAGNET: 100,
-    COST_JETPACK: 200,
-    INITIAL_COINS: 500,
-    CYCLE_DURATION: 120, 
-    MOVING_TRAIN_SPAWN_OFFSET: 180, 
-    TRAIN_COOLDOWN: 3000, 
-    COLORS: {
-        skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
-        coin: 0xFFD700, ground: 0x333344
-    }
-};
+		<div id="leaderboard-screen" class="menu-screen hidden">
+			<div class="leaderboard-container">
+				<div id="lb-title-text" class="game-title"
+					style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS</div>
+				<table class="lb-table">
+					<thead>
+						<tr>
+							<th id="th-rank">RANK</th>
+							<th id="th-name" onclick="Leaderboard.sort('name')">NAME <span
+									id="sort-name" class="sort-icon"></span></th>
+							<th id="th-score" onclick="Leaderboard.sort('score')">SCORE
+								<span id="sort-score" class="sort-icon">▼</span>
+							</th>
+							<th id="th-time" onclick="Leaderboard.sort('time')">TIME <span
+									id="sort-time" class="sort-icon"></span></th>
+						</tr>
+					</thead>
+					<tbody id="lb-body"></tbody>
+				</table>
+				<button id="lb-close-btn" class="btn-3d lb-close-btn"
+					onclick="document.getElementById('leaderboard-screen').classList.add('hidden')">CLOSE</button>
+			</div>
+		</div>
+	</div>
 
-// --- V23: Character Data ---
-const CHARACTERS = {
-    'default': { name: "Runner", color: 0xE0E0E0, glow: 0x00FFFF, cost: 0 },
-    'crimson': { name: "Crimson", color: 0xE74C3C, glow: 0xFFD700, cost: 500 },
-    'stealth': { name: "Stealth", color: 0x2C3E50, glow: 0xFF00FF, cost: 1000 },
-    'golden':  { name: "Midas",   color: 0xFFD700, glow: 0xFFFFFF, cost: 2000 }
-};
+	<script>
+		/**
+		 * FREE RUN: MOON CHASER (V23 - V20 Base + Character System)
+		 */
 
-const AudioSys = {
-    ctx: null,
-    muted: false,
-    bgmOscillators: [],
-    isPlayingBGM: false,
-    
-    init: function() {
-        if (!this.ctx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            this.ctx = new AudioContext();
-        }
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-    },
+		const CONFIG = {
+			LANES: [-2.5, 0, 2.5],
+			TRACK_LENGTH: 200,
+			PLAYER_SPEED_BASE: 15,
+			PLAYER_SPEED_MAX: 50,
+			SPEED_ACCELERATION: 0.8,
+			JUMP_FORCE: 0.35,
+			GRAVITY: 0.015,
+			MAGNET_DURATION: 10,
+			JETPACK_DURATION: 8,
+			JETPACK_HEIGHT: 7,
+			MAGNET_RANGE: 15,
+			COST_MAGNET: 100,
+			COST_JETPACK: 200,
+			INITIAL_COINS: 50000,
+			CYCLE_DURATION: 120,
+			MOVING_TRAIN_SPAWN_OFFSET: 180,
+			TRAIN_COOLDOWN: 3000,
+			COLORS: {
+				skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
+				coin: 0xFFD700, ground: 0x333344
+			}
+		};
 
-    toggle: function() {
-        this.muted = !this.muted;
-        document.getElementById('sound-btn').innerText = this.muted ? "🔇" : "🔊";
-        if(this.muted) this.stopBGM();
-        else if(gameActive && !isPaused) this.startBGM();
-    },
+		// --- V23: Character Data ---
+		const CHARACTERS = {
+			'default': { name: "Runner", color: 0xE0E0E0, glow: 0x00FFFF, cost: 0 },
+			'crimson': { name: "Crimson", color: 0xE74C3C, glow: 0xFFD700, cost: 500 },
+			'stealth': { name: "Stealth", color: 0x2C3E50, glow: 0xFF00FF, cost: 1000 },
+			'golden': { name: "Midas", color: 0xFFD700, glow: 0xFFFFFF, cost: 2000 }
+		};
 
-    playTone: function(freq, type, duration, vol) {
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-        gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + duration);
-    },
+		const AudioSys = {
+			ctx: null,
+			muted: false,
+			bgmOscillators: [],
+			isPlayingBGM: false,
 
-    playCoin: function() {
-        if(this.muted) return;
-        this.playTone(1200, 'sine', 0.1, 0.1);
-        setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.1), 50);
-    },
+			init: function () {
+				if (!this.ctx) {
+					const AudioContext = window.AudioContext || window.webkitAudioContext;
+					this.ctx = new AudioContext();
+				}
+				if (this.ctx.state === 'suspended') this.ctx.resume();
+			},
 
-    playPowerup: function() {
-        if (this.muted || !this.ctx) return;
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
-        osc.connect(gain); gain.connect(this.ctx.destination);
-        osc.start(); osc.stop(this.ctx.currentTime + 0.5);
-    },
+			toggle: function () {
+				this.muted = !this.muted;
+				document.getElementById('sound-btn').innerText = this.muted ? "🔇" : "🔊";
+				if (this.muted) this.stopBGM();
+				else if (gameActive && !isPaused) this.startBGM();
+			},
 
-    playCrash: function() {
-        if (this.muted || !this.ctx) return;
-        const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec noise
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-        const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
-        noise.connect(gain); gain.connect(this.ctx.destination);
-        noise.start();
-    },
+			playTone: function (freq, type, duration, vol) {
+				if (this.muted || !this.ctx) return;
+				const osc = this.ctx.createOscillator();
+				const gain = this.ctx.createGain();
+				osc.type = type;
+				osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+				gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+				gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+				osc.connect(gain);
+				gain.connect(this.ctx.destination);
+				osc.start();
+				osc.stop(this.ctx.currentTime + duration);
+			},
 
-    startBGM: function() {
-        if (this.muted || !this.ctx || this.isPlayingBGM) return;
-        this.isPlayingBGM = true;
-        this.bgmTimer = setInterval(() => {
-            if(!this.isPlayingBGM) return;
-            const t = this.ctx.currentTime;
-            const bassFreq = [55, 55, 55, 55, 65, 65, 49, 49][Math.floor(Date.now() / 250) % 8];
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(bassFreq, t);
-            const filter = this.ctx.createBiquadFilter();
-            filter.type = 'lowpass';
-            filter.frequency.setValueAtTime(400, t);
-            gain.gain.setValueAtTime(0.1, t);
-            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-            osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
-            osc.start(t); osc.stop(t + 0.2);
-        }, 250); 
-    },
+			playCoin: function () {
+				if (this.muted) return;
+				this.playTone(1200, 'sine', 0.1, 0.1);
+				setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.1), 50);
+			},
 
-    stopBGM: function() {
-        this.isPlayingBGM = false;
-        if(this.bgmTimer) clearInterval(this.bgmTimer);
-    }
-};
-window.AudioSys = AudioSys;
+			playPowerup: function () {
+				if (this.muted || !this.ctx) return;
+				const osc = this.ctx.createOscillator();
+				const gain = this.ctx.createGain();
+				osc.type = 'sawtooth';
+				osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+				osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.5);
+				gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+				gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+				osc.connect(gain); gain.connect(this.ctx.destination);
+				osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+			},
 
-const GameData = {
-    coins: 0,
-    inventory: { magnet: 0, jetpack: 0 },
-    settings: { autoMagnet: false, autoJetpack: false },
-    // V23: New Data for Chars
-    unlockedChars: ['default'],
-    curChar: 'default',
-    
-    load: function() {
-        const saved = localStorage.getItem('moonChaser_save');
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                this.coins = parsed.coins || 0;
-                this.inventory = parsed.inventory || { magnet: 0, jetpack: 0 };
-                this.settings = parsed.settings || { autoMagnet: false, autoJetpack: false };
-                this.unlockedChars = parsed.unlockedChars || ['default'];
-                this.curChar = parsed.curChar || 'default';
-            } catch(e) { this.coins = CONFIG.INITIAL_COINS; }
-        } else {
-            this.coins = CONFIG.INITIAL_COINS;
-            this.save();
-        }
-        if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins;
-    },
-    save: function() { localStorage.setItem('moonChaser_save', JSON.stringify({ 
-        coins: this.coins, 
-        inventory: this.inventory, 
-        settings: this.settings,
-        unlockedChars: this.unlockedChars,
-        curChar: this.curChar
-    })); },
-    addCoins: function(amount) { this.coins += amount; this.save(); if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins; }
-};
+			playCrash: function () {
+				if (this.muted || !this.ctx) return;
+				const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec noise
+				const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+				const data = buffer.getChannelData(0);
+				for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+				const noise = this.ctx.createBufferSource();
+				noise.buffer = buffer;
+				const gain = this.ctx.createGain();
+				gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+				gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+				noise.connect(gain); gain.connect(this.ctx.destination);
+				noise.start();
+			},
 
-const LANG = {
-    en: {
-        title: "FREE RUN<br>MOON CHASER",
-        play: "TAP TO PLAY", crashed: "CRASHED!", score: "SCORE", tryAgain: "TRY AGAIN", mainMenu: "MAIN MENU",
-        controls: `
+			startBGM: function () {
+				if (this.muted || !this.ctx || this.isPlayingBGM) return;
+				this.isPlayingBGM = true;
+				this.bgmTimer = setInterval(() => {
+					if (!this.isPlayingBGM) return;
+					const t = this.ctx.currentTime;
+					const bassFreq = [55, 55, 55, 55, 65, 65, 49, 49][Math.floor(Date.now() / 250) % 8];
+					const osc = this.ctx.createOscillator();
+					const gain = this.ctx.createGain();
+					osc.type = 'sawtooth';
+					osc.frequency.setValueAtTime(bassFreq, t);
+					const filter = this.ctx.createBiquadFilter();
+					filter.type = 'lowpass';
+					filter.frequency.setValueAtTime(400, t);
+					gain.gain.setValueAtTime(0.1, t);
+					gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+					osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+					osc.start(t); osc.stop(t + 0.2);
+				}, 250);
+			},
+
+			stopBGM: function () {
+				this.isPlayingBGM = false;
+				if (this.bgmTimer) clearInterval(this.bgmTimer);
+			}
+		};
+		window.AudioSys = AudioSys;
+
+		const GameData = {
+			coins: 0,
+			inventory: { magnet: 0, jetpack: 0 },
+			settings: { autoMagnet: false, autoJetpack: false },
+			// V23: New Data for Chars
+			unlockedChars: ['default'],
+			curChar: 'default',
+
+			load: function () {
+				const saved = localStorage.getItem('moonChaser_save');
+				if (saved) {
+					try {
+						const parsed = JSON.parse(saved);
+						this.coins = parsed.coins || 0;
+						this.inventory = parsed.inventory || { magnet: 0, jetpack: 0 };
+						this.settings = parsed.settings || { autoMagnet: false, autoJetpack: false };
+						this.unlockedChars = parsed.unlockedChars || ['default'];
+						this.curChar = parsed.curChar || 'default';
+					} catch (e) { this.coins = CONFIG.INITIAL_COINS; }
+				} else {
+					this.coins = CONFIG.INITIAL_COINS;
+					this.save();
+				}
+				if (document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins;
+			},
+			save: function () {
+				localStorage.setItem('moonChaser_save', JSON.stringify({
+					coins: this.coins,
+					inventory: this.inventory,
+					settings: this.settings,
+					unlockedChars: this.unlockedChars,
+					curChar: this.curChar
+				}));
+			},
+			addCoins: function (amount) { this.coins += amount; this.save(); if (document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = this.coins; }
+		};
+
+		const LANG = {
+			en: {
+				title: "FREE RUN<br>MOON CHASER",
+				play: "TAP TO PLAY", crashed: "CRASHED!", score: "SCORE", tryAgain: "TRY AGAIN", mainMenu: "MAIN MENU",
+				controls: `
             <div class="control-row">
                 <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
                 <span class="control-label">MOVE</span>
@@ -598,17 +1088,17 @@ const LANG = {
             </div>
             <div class="swipe-hint"><span class="swipe-icon">👆</span> (Swipe on Screen)</div>
         `,
-        rankBtn: "LEADERBOARD", lbTitle: "TOP RUNNERS", lbRank: "RANK", lbName: "NAME", lbScore: "SCORE", lbTime: "TIME", lbClose: "CLOSE", lbPlaceholder: "Enter Name", lbSave: "SAVE & RETRY", lbNoRecord: "No records yet.",
-        storeBtn: "SUPPLY STORE", storeTitle: "SUPPLY STORE", storeBack: "BACK",
-        itemNameMag: "Magnet Start", itemDescMag: "Start run with Magnet", itemOwn: "Owned: ", autoUse: "Auto-Use",
-        itemNameJet: "Jetpack Start", itemDescJet: "Start run with Jetpack",
-        pauseTitle: "PAUSED", resume: "RESUME", pauseMenu: "MAIN MENU",
-        charTitle: "CHARACTERS", charBack: "BACK", owned: "OWNED", equip: "EQUIP", equipped: "EQUIPPED", buy: "BUY"
-    },
-    cn: {
-        title: "自由奔跑<br>逐月者",
-        play: "点击开始", crashed: "撞击!", score: "最终得分", tryAgain: "再来一次", mainMenu: "返回主菜单",
-        controls: `
+				rankBtn: "LEADERBOARD", lbTitle: "TOP RUNNERS", lbRank: "RANK", lbName: "NAME", lbScore: "SCORE", lbTime: "TIME", lbClose: "CLOSE", lbPlaceholder: "Enter Name", lbSave: "SAVE & RETRY", lbNoRecord: "No records yet.",
+				storeBtn: "SUPPLY STORE", storeTitle: "SUPPLY STORE", storeBack: "BACK",
+				itemNameMag: "Magnet Start", itemDescMag: "Start run with Magnet", itemOwn: "Owned: ", autoUse: "Auto-Use",
+				itemNameJet: "Jetpack Start", itemDescJet: "Start run with Jetpack",
+				pauseTitle: "PAUSED", resume: "RESUME", pauseMenu: "MAIN MENU",
+				charTitle: "CHARACTERS", charBack: "BACK", owned: "OWNED", equip: "EQUIP", equipped: "EQUIPPED", buy: "BUY"
+			},
+			cn: {
+				title: "自由奔跑<br>逐月者",
+				play: "点击开始", crashed: "撞击!", score: "最终得分", tryAgain: "再来一次", mainMenu: "返回主菜单",
+				controls: `
             <div class="control-row">
                 <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
                 <span class="control-label">左右变道</span>
@@ -622,579 +1112,759 @@ const LANG = {
             </div>
             <div class="swipe-hint"><span class="swipe-icon">👆</span> (手机端支持滑动操作)</div>
         `,
-        rankBtn: "排行榜", lbTitle: "顶级奔跑者", lbRank: "排名", lbName: "名字", lbScore: "分数", lbTime: "时长", lbClose: "关闭", lbPlaceholder: "输入名字", lbSave: "保存并重试", lbNoRecord: "暂无记录，快去玩一把！",
-        storeBtn: "补给商店", storeTitle: "补给商店", storeBack: "返回",
-        itemNameMag: "开局磁铁", itemDescMag: "开局自动激活磁铁", itemOwn: "拥有: ", autoUse: "自动使用",
-        itemNameJet: "开局飞行", itemDescJet: "开局自动使用喷气背包",
-        pauseTitle: "游戏暂停", resume: "继续游戏", pauseMenu: "返回主菜单",
-        charTitle: "角色选择", charBack: "返回", owned: "已拥有", equip: "装备", equipped: "使用中", buy: "购买"
-    }
-};
-let currentLang = 'en';
+				rankBtn: "排行榜", lbTitle: "顶级奔跑者", lbRank: "排名", lbName: "名字", lbScore: "分数", lbTime: "时长", lbClose: "关闭", lbPlaceholder: "输入名字", lbSave: "保存并重试", lbNoRecord: "暂无记录，快去玩一把！",
+				storeBtn: "补给商店", storeTitle: "补给商店", storeBack: "返回",
+				itemNameMag: "开局磁铁", itemDescMag: "开局自动激活磁铁", itemOwn: "拥有: ", autoUse: "自动使用",
+				itemNameJet: "开局飞行", itemDescJet: "开局自动使用喷气背包",
+				pauseTitle: "游戏暂停", resume: "继续游戏", pauseMenu: "返回主菜单",
+				charTitle: "角色选择", charBack: "返回", owned: "已拥有", equip: "装备", equipped: "使用中", buy: "购买"
+			}
+		};
+		let currentLang = 'en';
 
-let scene, camera, renderer, clock;
-let player;
-let gameActive = false;
-let isPaused = false;
-let score = 0, coins = 0, distance = 0, survivalTime = 0;
-let speed = CONFIG.PLAYER_SPEED_BASE;
+		let scene, camera, renderer, clock;
+		let player;
+		let gameActive = false;
+		let isPaused = false;
+		let score = 0, coins = 0, distance = 0, survivalTime = 0;
+		let speed = CONFIG.PLAYER_SPEED_BASE;
 
-// Environment references
-let ambientLight, dirLight, sunMesh;
-let cycleTime = 0; 
+		// Environment references
+		let ambientLight, dirLight, sunMesh;
+		let cycleTime = 0;
 
-const activeTracks = [];
-const activeObstacles = [];
-const activeCoins = [];
-const activeMagnets = [];
-const activeJetpacks = [];
-const activeDecorations = []; 
-let world = { lastSpawnZ: 0 };
+		const activeTracks = [];
+		const activeObstacles = [];
+		const activeCoins = [];
+		const activeMagnets = [];
+		const activeJetpacks = [];
+		const activeDecorations = [];
+		let world = { lastSpawnZ: 0 };
 
-let targetLane = 1;
-let isJumping = false, isSliding = false;
-let verticalVelocity = 0, slideTimer = 0;
-let magnetActive = false, magnetTimer = 0;
-let jetpackActive = false, jetpackTimer = 0; 
+		let targetLane = 1;
+		let isJumping = false, isSliding = false;
+		let verticalVelocity = 0, slideTimer = 0;
+		let magnetActive = false, magnetTimer = 0;
+		let jetpackActive = false, jetpackTimer = 0;
 
-// Materials
-let buildingMaterials = [];
-let trainBodyMat, trainWindowMat, trainWheelMat;
+		// Materials
+		let buildingMaterials = [];
+		let trainBodyMat, trainWindowMat, trainWheelMat;
 
-function init() {
-    document.getElementById('loading').style.display = 'none';
-    GameData.load(); 
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(CONFIG.COLORS.skyNight);
-    scene.fog = new THREE.Fog(CONFIG.COLORS.skyNight, 20, 120);
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 300);
-    camera.position.set(0, 4, 10);
-    camera.rotation.set(-0.1, 0, 0);
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.getElementById('game-container').appendChild(renderer.domElement);
-    
-    createBuildingMaterials();
-    createTrainMaterials(); 
-    createEnvironment();
-    createPlayerModel();
-    setupInputs();
-    setupUI();
-    clock = new THREE.Clock();
-    animate();
-}
+		function init() {
+			document.getElementById('loading').style.display = 'none';
+			GameData.load();
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(CONFIG.COLORS.skyNight);
+			scene.fog = new THREE.Fog(CONFIG.COLORS.skyNight, 20, 120);
+			camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
+			camera.position.set(0, 4, 10);
+			camera.rotation.set(-0.1, 0, 0);
+			renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			document.getElementById('game-container').appendChild(renderer.domElement);
 
-function createBuildingMaterials() {
-    const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22];
-    colors.forEach(col => {
-        const canvas = document.createElement('canvas');
-        canvas.width = 64; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
-        ctx.fillRect(0, 0, 64, 64);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        for(let y=10; y<64; y+=16) { for(let x=8; x<64; x+=16) { if(Math.random() > 0.3) ctx.fillRect(x, y, 8, 10); } }
-        const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
-        buildingMaterials.push(new THREE.MeshPhongMaterial({ map: texture, color: 0xaaaaaa, emissive: col, emissiveIntensity: 0.2, shininess: 30 }));
-    });
-}
+			createBuildingMaterials();
+			createTrainMaterials();
+			createEnvironment();
+			createPlayerModel();
+			setupInputs();
+			setupUI();
+			clock = new THREE.Clock();
+			animate();
+		}
 
-function createTrainMaterials() {
-    trainBodyMat = new THREE.MeshPhongMaterial({ color: 0x34495e, shininess: 80, reflectivity: 0.5 });
-    const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 32;
-    const ctx = canvas.getContext('2d'); ctx.fillStyle = '#f1c40f'; ctx.fillRect(0, 5, 64, 22);
-    const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
-    trainWindowMat = new THREE.MeshBasicMaterial({ map: texture, color: 0xffffff });
-    trainWheelMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
-}
+		function createBuildingMaterials() {
+			const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22];
+			colors.forEach(col => {
+				const canvas = document.createElement('canvas');
+				canvas.width = 64; canvas.height = 64;
+				const ctx = canvas.getContext('2d');
+				ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
+				ctx.fillRect(0, 0, 64, 64);
+				ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+				for (let y = 10; y < 64; y += 16) { for (let x = 8; x < 64; x += 16) { if (Math.random() > 0.3) ctx.fillRect(x, y, 8, 10); } }
+				const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
+				buildingMaterials.push(new THREE.MeshPhongMaterial({ map: texture, color: 0xaaaaaa, emissive: col, emissiveIntensity: 0.2, shininess: 30 }));
+			});
+		}
 
-function createTrainModel(isMoving) {
-    const group = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.5, 18), trainBodyMat);
-    body.position.y = 2.25; body.castShadow = true; group.add(body);
-    const windows = new THREE.Mesh(new THREE.BoxGeometry(2.65, 1.0, 16), trainWindowMat);
-    windows.position.y = 3.0; group.add(windows);
-    const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 3, 16); wheelGeo.rotateZ(Math.PI / 2);
-    [-6, -2, 2, 6].forEach(z => { const axle = new THREE.Mesh(wheelGeo, trainWheelMat); axle.position.set(0, 0.6, z); axle.castShadow = true; group.add(axle); });
-    if (isMoving) {
-        const lightGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16); lightGeo.rotateX(Math.PI / 2);
-        const lightMesh = new THREE.Mesh(lightGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 }));
-        lightMesh.position.set(0, 2, 9.1); group.add(lightMesh);
-    }
-    group.userData.isObstacle = true;
-    if (isMoving) { group.userData.isMovingTrain = true; group.userData.trainSpeed = 35; }
-    return group;
-}
+		function createTrainMaterials() {
+			trainBodyMat = new THREE.MeshPhongMaterial({ color: 0x34495e, shininess: 80, reflectivity: 0.5 });
+			const canvas = document.createElement('canvas'); canvas.width = 64; canvas.height = 32;
+			const ctx = canvas.getContext('2d'); ctx.fillStyle = '#f1c40f'; ctx.fillRect(0, 5, 64, 22);
+			const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
+			trainWindowMat = new THREE.MeshBasicMaterial({ map: texture, color: 0xffffff });
+			trainWheelMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+		}
 
-function createPlayerModel() {
-    if(player) scene.remove(player); // Clear old
+		function createTrainModel(isMoving) {
+			const group = new THREE.Group();
+			const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.5, 18), trainBodyMat);
+			body.position.y = 2.25; body.castShadow = true; group.add(body);
+			const windows = new THREE.Mesh(new THREE.BoxGeometry(2.65, 1.0, 16), trainWindowMat);
+			windows.position.y = 3.0; group.add(windows);
+			const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 3, 16); wheelGeo.rotateZ(Math.PI / 2);
+			[-6, -2, 2, 6].forEach(z => { const axle = new THREE.Mesh(wheelGeo, trainWheelMat); axle.position.set(0, 0.6, z); axle.castShadow = true; group.add(axle); });
+			if (isMoving) {
+				const lightGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.2, 16); lightGeo.rotateX(Math.PI / 2);
+				const lightMesh = new THREE.Mesh(lightGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1 }));
+				lightMesh.position.set(0, 2, 9.1); group.add(lightMesh);
+			}
+			group.userData.isObstacle = true;
+			if (isMoving) { group.userData.isMovingTrain = true; group.userData.trainSpeed = 35; }
+			return group;
+		}
 
-    // V23: Use character data
-    const charData = CHARACTERS[GameData.curChar] || CHARACTERS['default'];
+		// ==========================================
+		//   定义角色构建器 (Character Builders)
+		// ==========================================
 
-    player = new THREE.Group();
-    const matArmor = new THREE.MeshPhongMaterial({ color: charData.color, shininess: 60 });
-    const matDark = new THREE.MeshPhongMaterial({ color: 0x2C3E50 });
-    const matGlow = new THREE.MeshBasicMaterial({ color: charData.glow });
-    const matOrange = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
+		// 材质缓存（优化性能，避免重复创建材质）
+		const Materials = {
+			standard: (col) => new THREE.MeshPhongMaterial({ color: col, shininess: 30, flatShading: false }),
+			plastic: (col) => new THREE.MeshLambertMaterial({ color: col }),
+			glow: (col) => new THREE.MeshBasicMaterial({ color: col }),
+			metal: (col) => new THREE.MeshStandardMaterial({ color: col, roughness: 0.3, metalness: 0.8 }),
+			dark: new THREE.MeshPhongMaterial({ color: 0x2c3e50, shininess: 10 })
+		};
 
-    const headGroup = new THREE.Group();
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.55), matArmor);
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 0.1), matGlow);
-    visor.position.set(0, 0.05, 0.28);
-    headGroup.add(head); headGroup.add(visor);
-    headGroup.position.y = 1.5;
-    
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.35), matArmor);
-    body.position.y = 0.9;
+		// 角色工厂
+		const CharacterFactory = {
+			// 基础骨架构建（为了保证动画通用性，所有角色基于此结构扩展）
+			createBaseSkeleton: function () {
+				const group = new THREE.Group();
+				// 这里的 userData 是接口的关键，动画循环只认这些名字
+				group.userData = { head: null, lArm: null, rArm: null, lLeg: null, rLeg: null, pack: null, flames: [] };
+				return group;
+			},
 
-    const pack = new THREE.Group();
-    const packBody = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 0.2), matDark);
-    pack.add(packBody);
-    const nozzleGeo = new THREE.CylinderGeometry(0.05, 0.08, 0.2, 8);
-    const nozzleL = new THREE.Mesh(nozzleGeo, matDark); nozzleL.position.set(-0.1, -0.25, 0);
-    const nozzleR = new THREE.Mesh(nozzleGeo, matDark); nozzleR.position.set(0.1, -0.25, 0);
-    pack.add(nozzleL); pack.add(nozzleR);
+			// 1. 默认角色：赛博跑者 (Runner)
+			buildDefault: function (color, glowColor) {
+				const player = this.createBaseSkeleton();
 
-    const flameHeight = 0.8;
-    const flameGeo = new THREE.ConeGeometry(0.1, flameHeight, 8); 
-    flameGeo.translate(0, flameHeight / 2, 0); 
-    const flameL = new THREE.Mesh(flameGeo, matOrange);
-    flameL.rotation.x = Math.PI; flameL.position.set(-0.1, -0.35, 0); 
-    const flameR = new THREE.Mesh(flameGeo, matOrange); 
-    flameR.rotation.x = Math.PI; flameR.position.set(0.1, -0.35, 0);
-    pack.add(flameL); pack.add(flameR);
-    pack.position.set(0, 1.0, 0.25); pack.visible = false; 
+				// 头盔 (带面罩)
+				const headG = new THREE.Group();
+				const headMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.55, 0.6), Materials.standard(color));
+				const visor = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.2, 0.4), Materials.glow(glowColor));
+				visor.position.set(0, 0.05, 0.15);
+				headG.add(headMesh, visor);
+				headG.position.y = 1.5;
+				player.add(headG); player.userData.head = headG;
 
-    const limbGeo = new THREE.BoxGeometry(0.18, 0.55, 0.18);
-    const leftArm = new THREE.Mesh(limbGeo, matDark); leftArm.position.set(-0.36, 1.0, 0);
-    const rightArm = new THREE.Mesh(limbGeo, matDark); rightArm.position.set(0.36, 1.0, 0);
-    const leftLeg = new THREE.Mesh(limbGeo, matArmor); leftLeg.position.set(-0.15, 0.3, 0);
-    const rightLeg = new THREE.Mesh(limbGeo, matArmor); rightLeg.position.set(0.15, 0.3, 0);
+				// 身体
+				const body = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), Materials.standard(color));
+				body.position.y = 0.85;
+				player.add(body);
 
-    player.add(headGroup, body, pack, leftArm, rightArm, leftLeg, rightLeg);
-    player.userData = { head: headGroup, lArm: leftArm, rArm: rightArm, lLeg: leftLeg, rLeg: rightLeg, pack: pack, flames: [flameL, flameR] };
-    player.traverse(obj => { if(obj.isMesh) obj.castShadow = true; });
-    scene.add(player);
-}
+				// 四肢 (使用更圆润的几何体比参考图更好看)
+				const limbGeo = new THREE.BoxGeometry(0.18, 0.55, 0.18);
+				const limbMat = Materials.dark;
 
-function createMagnetModel() {
-    const group = new THREE.Group();
-    const matRed = new THREE.MeshPhongMaterial({ color: 0xE74C3C });
-    const matSilver = new THREE.MeshPhongMaterial({ color: 0xBDC3C7 });
-    const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.15), matRed); bottom.position.y = -0.25;
-    const left = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), matRed); left.position.set(-0.225, 0, 0);
-    const right = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), matRed); right.position.set(0.225, 0, 0);
-    const tipL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.16), matSilver); tipL.position.set(-0.225, 0.25, 0);
-    const tipR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.16), matSilver); tipR.position.set(0.225, 0.25, 0);
-    group.add(bottom, left, right, tipL, tipR);
-    const wrapper = new THREE.Group(); wrapper.add(group);
-    wrapper.scale.set(1.5, 1.5, 1.5); wrapper.userData = { type: 'MAGNET', rotate: true };
-    return wrapper;
-}
+				const lArm = new THREE.Mesh(limbGeo, limbMat); lArm.position.set(-0.38, 1.0, 0);
+				const rArm = new THREE.Mesh(limbGeo, limbMat); rArm.position.set(0.38, 1.0, 0);
+				const lLeg = new THREE.Mesh(limbGeo, Materials.standard(color)); lLeg.position.set(-0.15, 0.3, 0);
+				const rLeg = new THREE.Mesh(limbGeo, Materials.standard(color)); rLeg.position.set(0.15, 0.3, 0);
 
-function createJetpackModel() {
-    const group = new THREE.Group();
-    const matTank = new THREE.MeshPhongMaterial({ color: 0x95a5a6, shininess: 80 });
-    const matDetail = new THREE.MeshLambertMaterial({ color: 0xf1c40f });
-    const tankGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 12);
-    const tankL = new THREE.Mesh(tankGeo, matTank); tankL.position.x = -0.2;
-    const tankR = new THREE.Mesh(tankGeo, matTank); tankR.position.x = 0.2;
-    const belt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.15), matDetail);
-    group.add(tankL, tankR, belt);
-    const wrapper = new THREE.Group(); wrapper.add(group);
-    wrapper.scale.set(1.5, 1.5, 1.5); wrapper.userData = { type: 'JETPACK', rotate: true };
-    return wrapper;
-}
+				player.add(lArm, rArm, lLeg, rLeg);
+				Object.assign(player.userData, { lArm, rArm, lLeg, rLeg }); // 绑定骨骼
 
-function createEnvironment() {
-    // Lights
-    ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(ambientLight);
-    dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(-10, 30, 20); dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
-    dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 100;
-    scene.add(dirLight);
+				return player;
+			},
 
-    // Sun/Moon
-    sunMesh = new THREE.Mesh(new THREE.SphereGeometry(25, 32, 32), new THREE.MeshBasicMaterial({ color: 0xFFFFDD }));
-    sunMesh.position.set(20, 40, -120);
-    scene.add(sunMesh);
+			// 2. 红色角色：武士 (Samurai - 更有棱角)
+			buildCrimson: function (color, glowColor) {
+				const player = this.createBaseSkeleton();
 
-    for(let i=0; i<3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
-}
+				// 武士头盔
+				const headG = new THREE.Group();
+				const helmet = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.4, 0.5, 4), Materials.standard(color));
+				const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.3, 4), Materials.glow(glowColor));
+				hornL.position.set(-0.25, 0.2, 0); hornL.rotation.z = 0.5;
+				const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.3, 4), Materials.glow(glowColor));
+				hornR.position.set(0.25, 0.2, 0); hornR.rotation.z = -0.5;
+				headG.add(helmet, hornL, hornR);
+				headG.position.y = 1.5;
+				player.add(headG); player.userData.head = headG;
 
-function createTrackSegment(zPos) {
-    const seg = new THREE.Group();
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, CONFIG.TRACK_LENGTH), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.ground }));
-    floor.rotation.x = -Math.PI/2; floor.receiveShadow = true;
-    seg.add(floor);
-    const rGeo = new THREE.BoxGeometry(0.2, 0.1, CONFIG.TRACK_LENGTH);
-    const rMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
-    CONFIG.LANES.forEach(x => {
-        let r1 = new THREE.Mesh(rGeo, rMat); r1.position.set(x-0.6, 0.05, 0); seg.add(r1);
-        let r2 = new THREE.Mesh(rGeo, rMat); r2.position.set(x+0.6, 0.05, 0); seg.add(r2);
-    });
-    seg.position.z = zPos;
-    scene.add(seg);
-    activeTracks.push(seg);
-}
+				// 盔甲身体
+				const body = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.25, 0.7, 6), Materials.standard(0x2c3e50));
+				body.position.y = 0.85;
+				player.add(body);
 
-function spawnBuilding(zPos) {
-    const h1 = 15 + Math.random() * 30; const w1 = 5 + Math.random() * 5; const d1 = 5 + Math.random() * 5;
-    const mat1 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
-    const b1 = new THREE.Mesh(new THREE.BoxGeometry(w1, h1, d1), mat1);
-    b1.position.set(-12 - (w1/2), h1/2 - 5, zPos); b1.castShadow = true; b1.receiveShadow = true;
-    scene.add(b1); activeDecorations.push(b1);
+				// 强壮的四肢
+				const armGeo = new THREE.BoxGeometry(0.2, 0.6, 0.2);
+				const lArm = new THREE.Mesh(armGeo, Materials.standard(color)); lArm.position.set(-0.4, 1.0, 0);
+				const rArm = new THREE.Mesh(armGeo, Materials.standard(color)); rArm.position.set(0.4, 1.0, 0);
+				const lLeg = new THREE.Mesh(armGeo, Materials.standard(0x111111)); lLeg.position.set(-0.15, 0.3, 0);
+				const rLeg = new THREE.Mesh(armGeo, Materials.standard(0x111111)); rLeg.position.set(0.15, 0.3, 0);
 
-    const h2 = 15 + Math.random() * 30; const w2 = 5 + Math.random() * 5; const d2 = 5 + Math.random() * 5;
-    const mat2 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
-    const b2 = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), mat2);
-    b2.position.set(12 + (w2/2), h2/2 - 5, zPos); b2.castShadow = true; b2.receiveShadow = true;
-    scene.add(b2); activeDecorations.push(b2);
-}
+				player.add(lArm, rArm, lLeg, rLeg);
+				Object.assign(player.userData, { lArm, rArm, lLeg, rLeg });
 
-function spawnObstacle(zPos) {
-    if (jetpackActive) { for(let i=0; i<3; i++) spawnCoins(CONFIG.LANES[i], zPos, CONFIG.JETPACK_HEIGHT); }
-    const rand = Math.random();
-    const laneIdx = Math.floor(Math.random() * 3);
-    const laneX = CONFIG.LANES[laneIdx];
-    const now = Date.now();
+				return player;
+			},
 
-    if (rand < 0.05) { 
-        const mag = createMagnetModel(); mag.position.set(laneX, 1.0, zPos); scene.add(mag); activeMagnets.push(mag);
-    } else if (rand < 0.10) { 
-        const jet = createJetpackModel(); jet.position.set(laneX, 1.0, zPos); scene.add(jet); activeJetpacks.push(jet);
-    } else {
-        let mesh;
-        const obstacleType = Math.random();
-        let canSpawnTrain = (now - world.lastMovingTrainTime) > CONFIG.TRAIN_COOLDOWN;
-        
-        if (canSpawnTrain && obstacleType < 0.25) { 
-            mesh = createTrainModel(true); 
-            mesh.position.set(laneX, 0, zPos - CONFIG.MOVING_TRAIN_SPAWN_OFFSET);
-            world.lastMovingTrainTime = now;
-        } else if (obstacleType < 0.6) {
-            mesh = createTrainModel(false); mesh.position.set(laneX, 0, zPos);
-        } else if (obstacleType < 0.8) {
-            const group = new THREE.Group();
-            const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 0.2), new THREE.MeshLambertMaterial({color:0x7F8C8D}));
-            const p1=pole.clone(); p1.position.set(-1.2, 1.5, 0); const p2=pole.clone(); p2.position.set(1.2, 1.5, 0);
-            const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1, 0.2), new THREE.MeshLambertMaterial({color:0x27AE60}));
-            bar.position.set(0, 2.5, 0); group.add(p1, p2, bar); group.position.set(laneX, 0, zPos);
-            mesh = group; mesh.userData.isHigh = true;
-        } else {
-            mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.5), new THREE.MeshLambertMaterial({color:0xE67E22}));
-            mesh.position.set(laneX, 0.4, zPos);
-        }
-        if(mesh.isMesh || mesh.isGroup) { 
-            mesh.traverse(child => { if(child.isMesh) { child.castShadow = true; child.receiveShadow = true; }});
-        }
-        scene.add(mesh); activeObstacles.push(mesh);
-    }
-    
-    if (!jetpackActive) { const coinLane = (laneIdx + 1) % 3; spawnCoins(CONFIG.LANES[coinLane], zPos, 0.8); }
-    spawnBuilding(zPos);
-}
+			// 3. 隐形角色：忍者 (Stealth - 纤细，流线型)
+			buildStealth: function (color, glowColor) {
+				const player = this.createBaseSkeleton();
 
-function spawnCoins(x, z, height) {
-    if (Math.random() > 0.6) return;
-    for (let i = 0; i < 5; i++) {
-        const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.coin, shininess: 80 }));
-        coin.rotation.z = Math.PI / 2; coin.position.set(x, height, z + (i * 1.5));
-        coin.userData = { isCoin: true, collected: false };
-        scene.add(coin); activeCoins.push(coin);
-    }
-}
+				// 忍者头巾
+				const headG = new THREE.Group();
+				const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), Materials.standard(color));
+				const eye = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.2), Materials.glow(glowColor));
+				eye.position.set(0, 0, 0.2);
+				// 飘带 (静态)
+				const scarf = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.4, 0.05), Materials.standard(0xff0000));
+				scarf.position.set(0, -0.2, -0.3); scarf.rotation.x = 0.5;
+				headG.add(head, eye, scarf);
+				headG.position.y = 1.5;
+				player.add(headG); player.userData.head = headG;
 
-function startGame(e) {
-    if(e && e.stopPropagation) e.stopPropagation();
-    if(document.getElementById('play-btn')) document.getElementById('play-btn').blur();
+				// 紧身衣
+				const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.25, 0.5, 4, 8), Materials.standard(0x1a1a1a));
+				body.position.y = 0.9;
+				player.add(body);
 
-    // 播放BGM
-    AudioSys.init();
-    AudioSys.startBGM();
+				// 纤细四肢
+				const limbGeo = new THREE.CylinderGeometry(0.08, 0.06, 0.6, 8);
+				const lArm = new THREE.Mesh(limbGeo, Materials.standard(0x333333)); lArm.position.set(-0.32, 1.05, 0);
+				const rArm = new THREE.Mesh(limbGeo, Materials.standard(0x333333)); rArm.position.set(0.32, 1.05, 0);
+				const lLeg = new THREE.Mesh(limbGeo, Materials.standard(0x333333)); lLeg.position.set(-0.12, 0.3, 0);
+				const rLeg = new THREE.Mesh(limbGeo, Materials.standard(0x333333)); rLeg.position.set(0.12, 0.3, 0);
 
-    [activeObstacles, activeCoins, activeMagnets, activeJetpacks, activeDecorations].forEach(arr => {
-        arr.forEach(o => scene.remove(o)); arr.length = 0;
-    });
-    activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0;
-    for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
-    for (let i = 10; i < 150; i+=25) { spawnBuilding(-i); }
+				player.add(lArm, rArm, lLeg, rLeg);
+				Object.assign(player.userData, { lArm, rArm, lLeg, rLeg });
+				return player;
+			},
 
-    player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
-    camera.position.set(0, 5, 8); camera.rotation.set(-0.3, 0, 0);
+			// 4. 黄金角色：机器人 (Bot - 类似参考图但更精致)
+			buildGolden: function (color, glowColor) {
+				const player = this.createBaseSkeleton();
 
-    targetLane = 1; speed = CONFIG.PLAYER_SPEED_BASE;
-    score = 0; coins = 0; distance = 0; survivalTime = 0;
-    isJumping = false; isSliding = false; verticalVelocity = 0;
-    cycleTime = 0; 
-    
-    magnetActive = false; magnetTimer = 0;
-    jetpackActive = false; jetpackTimer = 0;
-    isPaused = false; 
-    world.lastMovingTrainTime = 0; 
+				// 机器人圆头
+				const headG = new THREE.Group();
+				const dome = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), Materials.metal(color));
+				const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.3), Materials.standard(0x888888));
+				antenna.position.y = 0.3;
+				headG.add(dome, antenna);
+				headG.position.y = 1.5;
+				player.add(headG); player.userData.head = headG;
 
-    document.getElementById('magnet-status').classList.remove('active');
-    document.getElementById('jetpack-status').classList.remove('active');
-    
-    if(player && player.userData && player.userData.pack) {
-        player.userData.pack.visible = false;
-    }
+				// 方块身体 (致敬参考图)
+				const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.4), Materials.metal(color));
+				body.position.y = 0.9;
+				player.add(body);
 
-    let autoUsed = false;
-    if (GameData.settings.autoJetpack && GameData.inventory.jetpack > 0) {
-        GameData.inventory.jetpack--; activateJetpack(); autoUsed = true;
-    } else if (GameData.settings.autoMagnet && GameData.inventory.magnet > 0) {
-        GameData.inventory.magnet--; activateMagnet(); autoUsed = true;
-    }
-    if (autoUsed) GameData.save();
+				// 关节连接的四肢 (球形关节 + 圆柱)
+				const jointGeo = new THREE.SphereGeometry(0.12, 16, 16);
+				const limbGeo = new THREE.CylinderGeometry(0.1, 0.1, 0.45, 16);
 
-    world.lastSpawnZ = 0;
-    gameActive = true;
-    updateHUD();
+				// 构建带关节的手臂辅助函数
+				const createLimb = (x, y, isLeg) => {
+					const g = new THREE.Group();
+					g.position.set(x, y, 0);
+					const joint = new THREE.Mesh(jointGeo, Materials.standard(0x555555));
+					const limb = new THREE.Mesh(limbGeo, Materials.metal(color));
+					limb.position.y = isLeg ? -0.25 : -0.25;
+					g.add(joint, limb);
+					return g;
+				};
 
-    document.getElementById('main-menu').classList.add('hidden');
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-btn').classList.remove('hidden'); 
-    document.getElementById('hud-panel').classList.remove('hidden');
-}
-window.startGame = startGame;
+				const lArm = createLimb(-0.4, 1.1, false);
+				const rArm = createLimb(0.4, 1.1, false);
+				const lLeg = createLimb(-0.2, 0.5, true);
+				const rLeg = createLimb(0.2, 0.5, true);
 
-function updateDayNightCycle(delta) {
-    cycleTime += delta;
-    const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION; 
-    
-    let skyColor, sunColor = 0xFFFFDD, lightIntensity = 0.4, emissiveIntensity = 0.2;
+				player.add(lArm, rArm, lLeg, rLeg);
+				Object.assign(player.userData, { lArm, rArm, lLeg, rLeg });
 
-    if (progress < 0.2) { 
-        const t = progress / 0.2;
-        skyColor = new THREE.Color(CONFIG.COLORS.skyNight).lerp(new THREE.Color(CONFIG.COLORS.skySunrise), t);
-        lightIntensity = 0.3 + t * 0.5; emissiveIntensity = 0.5 * (1 - t);
-    } else if (progress < 0.5) { 
-        const t = (progress - 0.2) / 0.3;
-        skyColor = new THREE.Color(CONFIG.COLORS.skySunrise).lerp(new THREE.Color(CONFIG.COLORS.skyDay), t);
-        lightIntensity = 0.8 + t * 0.4; emissiveIntensity = 0; sunColor = 0xFFFFAA;
-    } else if (progress < 0.7) { 
-        const t = (progress - 0.5) / 0.2;
-        skyColor = new THREE.Color(CONFIG.COLORS.skyDay).lerp(new THREE.Color(CONFIG.COLORS.skySunset), t);
-        lightIntensity = 1.2 - t * 0.6; emissiveIntensity = t * 0.3; sunColor = 0xFFCC00;
-    } else { 
-        const t = (progress - 0.7) / 0.3;
-        skyColor = new THREE.Color(CONFIG.COLORS.skySunset).lerp(new THREE.Color(CONFIG.COLORS.skyNight), t);
-        lightIntensity = 0.6 - t * 0.3; emissiveIntensity = 0.3 + t * 0.2; sunColor = 0xDDDDFF;
-    }
+				return player;
+			}
+		};
 
-    scene.background = skyColor; scene.fog.color = skyColor;
-    ambientLight.intensity = lightIntensity * 0.6; dirLight.intensity = lightIntensity;
-    
-    const angle = progress * Math.PI * 2;
-    sunMesh.position.x = Math.cos(angle) * 100; sunMesh.position.y = Math.sin(angle) * 100;
-    sunMesh.material.color.setHex(sunColor);
+		// ==========================================
+		//    核心替换函数：createPlayerModel
+		// ==========================================
 
-    buildingMaterials.forEach(mat => { mat.emissiveIntensity = emissiveIntensity; });
-}
+		function createPlayerModel() {
+			if (player) scene.remove(player); // 清除旧模型
 
-function animate() {
-    requestAnimationFrame(animate);
-    const delta = clock.getDelta(); 
+			// 获取当前选择的角色ID
+			const charId = GameData.curChar || 'default';
+			const charData = CHARACTERS[charId];
 
-    if (gameActive) {
-        if (!isPaused) {
-            updateDayNightCycle(delta); 
+			// 根据ID调用不同的构建工厂
+			let newPlayer;
+			switch (charId) {
+				case 'crimson':
+					newPlayer = CharacterFactory.buildCrimson(charData.color, charData.glow);
+					break;
+				case 'stealth':
+					newPlayer = CharacterFactory.buildStealth(charData.color, charData.glow);
+					break;
+				case 'golden':
+					newPlayer = CharacterFactory.buildGolden(charData.color, charData.glow);
+					break;
+				default:
+					newPlayer = CharacterFactory.buildDefault(charData.color, charData.glow);
+					break;
+			}
 
-            const moveDist = speed * delta;
-            player.position.z -= moveDist;
-            distance += moveDist;
-            
-            if(speed < CONFIG.PLAYER_SPEED_MAX) { speed += CONFIG.SPEED_ACCELERATION * delta; }
+			// --- 通用配件：喷气背包 (Jetpack) ---
+			// 所有角色共用这套逻辑，挂载在背部
+			const pack = new THREE.Group();
+			const packBody = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 0.2), Materials.dark);
+			pack.add(packBody);
 
-            const tx = CONFIG.LANES[targetLane];
-            player.position.x += (tx - player.position.x) * 10 * delta;
+			// 喷口
+			const nozzleGeo = new THREE.CylinderGeometry(0.06, 0.1, 0.2, 8);
+			const nozzleL = new THREE.Mesh(nozzleGeo, Materials.dark); nozzleL.position.set(-0.12, -0.3, 0);
+			const nozzleR = new THREE.Mesh(nozzleGeo, Materials.dark); nozzleR.position.set(0.12, -0.3, 0);
+			pack.add(nozzleL, nozzleR);
 
-            activeObstacles.forEach(obs => {
-                if (obs.userData.isMovingTrain) {
-                    obs.position.z += obs.userData.trainSpeed * delta;
-                }
-            });
-            
-            let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
-            
-            if (jetpackActive) {
-                jetpackTimer -= delta;
-                document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
-                if (jetpackTimer <= 0) { jetpackActive = false; document.getElementById('jetpack-status').classList.remove('active'); }
-                
-                player.userData.pack.visible = true;
-                const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
-                const targetH = CONFIG.JETPACK_HEIGHT + hoverWave;
-                player.position.y += (targetH - player.position.y) * 5 * delta;
-                
-                player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
-                player.userData.flames.forEach(f => {
-                    f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
-                    f.scale.set(pulse, pulse * 1.2, pulse);
-                });
-                player.userData.lLeg.position.z = -0.1; player.userData.rLeg.position.z = -0.1;
-                player.userData.lLeg.rotation.x = -0.2 + hoverWave * 0.2; player.userData.rLeg.rotation.x = -0.2 + hoverWave * 0.2;
-                player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
-                isJumping = false; isSliding = false;
+			// 火焰粒子 (预创建)
+			const flameGeo = new THREE.ConeGeometry(0.12, 0.8, 8);
+			flameGeo.translate(0, 0.4, 0);
+			const matFire = new THREE.MeshBasicMaterial({ color: 0xFF6600 });
+			const flameL = new THREE.Mesh(flameGeo, matFire);
+			flameL.rotation.x = Math.PI; flameL.position.set(-0.12, -0.4, 0);
+			const flameR = new THREE.Mesh(flameGeo, matFire);
+			flameR.rotation.x = Math.PI; flameR.position.set(0.12, -0.4, 0);
+			pack.add(flameL, flameR);
 
-                // V20 Camera Fix: Higher & Tilted Down
-                targetY = 12;       // 拉高高度，越过头顶
-                targetZOffset = 14; // 稍微往后拉一点点
-                targetRotX = -0.45; // 向下俯视，把角色压到屏幕下方
-            } else {
-                player.userData.pack.visible = false;
-                player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15; 
-                if (isJumping) {
-                    player.position.y += verticalVelocity; verticalVelocity -= CONFIG.GRAVITY;
-                    if (player.position.y <= 0) { player.position.y = 0; isJumping = false; }
-                } else {
-                    if (player.position.y > 0) player.position.y -= CONFIG.GRAVITY * 10;
-                    if (player.position.y < 0) player.position.y = 0;
-                }
-                if (isSliding) {
-                    slideTimer -= delta; player.scale.y = 0.5;
-                    if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
-                }
-                if (!isJumping && !isSliding) {
-                    const time = Date.now() * 0.015;
-                    player.userData.lLeg.rotation.x = 0; player.userData.rLeg.rotation.x = 0; 
-                    player.userData.lLeg.position.z = Math.sin(time) * 0.2; player.userData.rLeg.position.z = Math.cos(time) * 0.2;
-                    player.userData.lArm.rotation.x = Math.cos(time) * 0.5; player.userData.rArm.rotation.x = Math.sin(time) * 0.5;
-                }
-            }
+			pack.position.set(0, 1.0, -0.25); // 挂在背部
+			pack.visible = false; // 默认隐藏
 
-            camera.position.y += (targetY - camera.position.y) * 3 * delta;
-            const desiredZ = player.position.z + targetZOffset;
-            camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
-            camera.position.x = player.position.x * 0.4;
-            camera.rotation.x += (targetRotX - camera.rotation.x) * 3 * delta;
+			// 将背包组件注入到 newPlayer 的 userData 中，保证原有逻辑不报错
+			newPlayer.add(pack);
+			newPlayer.userData.pack = pack;
+			newPlayer.userData.flames = [flameL, flameR];
 
-            if (magnetActive) {
-                magnetTimer -= delta;
-                document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
-                if (magnetTimer <= 0) { magnetActive = false; document.getElementById('magnet-status').classList.remove('active'); }
-                activeCoins.forEach(coin => {
-                    if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) coin.userData.attracted = true;
-                    if (coin.userData.attracted) {
-                        const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
-                        coin.position.add(target.sub(coin.position).normalize().multiplyScalar(30 * delta));
-                        if (coin.position.distanceTo(player.position) < 1.0) collectCoin(coin);
-                    }
-                });
-            }
+			// 阴影设置
+			newPlayer.traverse(obj => { if (obj.isMesh) obj.castShadow = true; });
 
-            updateWorldGen();
-            checkCollisions();
-            score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
-            updateHUD();
-        } 
-    } else {
-        const t = Date.now() * 0.002;
-        player.position.y = Math.sin(t) * 0.1; 
-        player.rotation.y += 0.01;
-    }
-    renderer.render(scene, camera);
-}
+			player = newPlayer;
+			scene.add(player);
+		}
 
-function checkCollisions() {
-    const pBox = new THREE.Box3().setFromObject(player);
-    pBox.min.x += 0.3; pBox.max.x -= 0.3; pBox.min.z += 0.2; pBox.max.z -= 0.2;
+		function createMagnetModel() {
+			const group = new THREE.Group();
+			const matRed = new THREE.MeshPhongMaterial({ color: 0xE74C3C });
+			const matSilver = new THREE.MeshPhongMaterial({ color: 0xBDC3C7 });
+			const bottom = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.15), matRed); bottom.position.y = -0.25;
+			const left = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), matRed); left.position.set(-0.225, 0, 0);
+			const right = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.4, 0.15), matRed); right.position.set(0.225, 0, 0);
+			const tipL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.16), matSilver); tipL.position.set(-0.225, 0.25, 0);
+			const tipR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.15, 0.16), matSilver); tipR.position.set(0.225, 0.25, 0);
+			group.add(bottom, left, right, tipL, tipR);
+			const wrapper = new THREE.Group(); wrapper.add(group);
+			wrapper.scale.set(1.5, 1.5, 1.5); wrapper.userData = { type: 'MAGNET', rotate: true };
+			return wrapper;
+		}
 
-    if (!jetpackActive) {
-        for (let obs of activeObstacles) {
-            if (pBox.intersectsBox(new THREE.Box3().setFromObject(obs))) {
-                if(isSliding && obs.userData.isHigh) continue; 
-                gameOver(); return;
-            }
-        }
-    }
+		function createJetpackModel() {
+			const group = new THREE.Group();
+			const matTank = new THREE.MeshPhongMaterial({ color: 0x95a5a6, shininess: 80 });
+			const matDetail = new THREE.MeshLambertMaterial({ color: 0xf1c40f });
+			const tankGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.6, 12);
+			const tankL = new THREE.Mesh(tankGeo, matTank); tankL.position.x = -0.2;
+			const tankR = new THREE.Mesh(tankGeo, matTank); tankR.position.x = 0.2;
+			const belt = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 0.15), matDetail);
+			group.add(tankL, tankR, belt);
+			const wrapper = new THREE.Group(); wrapper.add(group);
+			wrapper.scale.set(1.5, 1.5, 1.5); wrapper.userData = { type: 'JETPACK', rotate: true };
+			return wrapper;
+		}
 
-    const checkItem = (list, action) => {
-        for (let i = list.length - 1; i >= 0; i--) {
-            const item = list[i]; item.rotation.y += 0.05;
-            const iBox = new THREE.Box3().setFromObject(item); iBox.expandByScalar(0.5); 
-            if (pBox.intersectsBox(iBox)) { action(); scene.remove(item); list.splice(i, 1); }
-        }
-    };
-    checkItem(activeMagnets, activateMagnet);
-    checkItem(activeJetpacks, activateJetpack);
+		function createEnvironment() {
+			// Lights
+			ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+			scene.add(ambientLight);
+			dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+			dirLight.position.set(-10, 30, 20); dirLight.castShadow = true;
+			dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
+			dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 100;
+			scene.add(dirLight);
 
-    for (let i = activeCoins.length - 1; i >= 0; i--) {
-        const coin = activeCoins[i];
-        if (coin.userData.collected) continue;
-        coin.rotation.y += 0.1;
-        if (pBox.intersectsBox(new THREE.Box3().setFromObject(coin))) collectCoin(coin);
-    }
-}
+			// Sun/Moon
+			sunMesh = new THREE.Mesh(new THREE.SphereGeometry(25, 32, 32), new THREE.MeshBasicMaterial({ color: 0xFFFFDD }));
+			sunMesh.position.set(20, 40, -120);
+			scene.add(sunMesh);
 
-function activateMagnet() { 
-    magnetActive = true; magnetTimer = CONFIG.MAGNET_DURATION; 
-    document.getElementById('magnet-status').classList.add('active'); 
-    AudioSys.playPowerup();
-}
-function activateJetpack() { 
-    jetpackActive = true; jetpackTimer = CONFIG.JETPACK_DURATION; 
-    document.getElementById('jetpack-status').classList.add('active'); 
-    AudioSys.playPowerup();
-}
+			for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
+		}
 
-function collectCoin(coin) { 
-    if(coin.userData.collected) return; 
-    coin.userData.collected = true; 
-    
-    const currentMultiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
-    coins += currentMultiplier; 
-    
-    scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1); 
-    AudioSys.playCoin();
-}
+		function createTrackSegment(zPos) {
+			const seg = new THREE.Group();
+			const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, CONFIG.TRACK_LENGTH), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.ground }));
+			floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+			seg.add(floor);
+			const rGeo = new THREE.BoxGeometry(0.2, 0.1, CONFIG.TRACK_LENGTH);
+			const rMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
+			CONFIG.LANES.forEach(x => {
+				let r1 = new THREE.Mesh(rGeo, rMat); r1.position.set(x - 0.6, 0.05, 0); seg.add(r1);
+				let r2 = new THREE.Mesh(rGeo, rMat); r2.position.set(x + 0.6, 0.05, 0); seg.add(r2);
+			});
+			seg.position.z = zPos;
+			scene.add(seg);
+			activeTracks.push(seg);
+		}
 
-function updateWorldGen() {
-    if (activeTracks[0].position.z > player.position.z + CONFIG.TRACK_LENGTH) {
-        const seg = activeTracks.shift(); seg.position.z = activeTracks[activeTracks.length-1].position.z - CONFIG.TRACK_LENGTH; activeTracks.push(seg);
-    }
-    if (world.lastSpawnZ > player.position.z - 80) { world.lastSpawnZ -= 25; spawnObstacle(world.lastSpawnZ); }
-    const clean = (arr) => { for(let i=arr.length-1; i>=0; i--) { if(arr[i].position.z > player.position.z + 20) { scene.remove(arr[i]); arr.splice(i,1); } } };
-    clean(activeObstacles); clean(activeCoins); clean(activeMagnets); clean(activeJetpacks); clean(activeDecorations);
-}
+		function spawnBuilding(zPos) {
+			const h1 = 15 + Math.random() * 30; const w1 = 5 + Math.random() * 5; const d1 = 5 + Math.random() * 5;
+			const mat1 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+			const b1 = new THREE.Mesh(new THREE.BoxGeometry(w1, h1, d1), mat1);
+			b1.position.set(-12 - (w1 / 2), h1 / 2 - 5, zPos); b1.castShadow = true; b1.receiveShadow = true;
+			scene.add(b1); activeDecorations.push(b1);
 
-// --- V23: CHARACTER SYSTEM LOGIC ---
-const CharSys = {
-    show: function(e) {
-        if(e && e.stopPropagation) e.stopPropagation();
-        this.render();
-        // Hide Main Menu to prevent bugs
-        document.getElementById('main-menu').classList.add('hidden');
-        document.getElementById('char-screen').classList.remove('hidden');
-    },
-    close: function(e) {
-        if(e && e.stopPropagation) e.stopPropagation();
-        document.getElementById('char-screen').classList.add('hidden');
-        document.getElementById('main-menu').classList.remove('hidden');
-    },
-    render: function() {
-        const grid = document.getElementById('char-grid');
-        grid.innerHTML = '';
-        document.getElementById('char-coin-count').innerText = GameData.coins;
-        document.getElementById('char-title').innerText = LANG[currentLang].charTitle;
-        document.getElementById('char-close-btn').innerText = LANG[currentLang].charBack;
+			const h2 = 15 + Math.random() * 30; const w2 = 5 + Math.random() * 5; const d2 = 5 + Math.random() * 5;
+			const mat2 = buildingMaterials[Math.floor(Math.random() * buildingMaterials.length)];
+			const b2 = new THREE.Mesh(new THREE.BoxGeometry(w2, h2, d2), mat2);
+			b2.position.set(12 + (w2 / 2), h2 / 2 - 5, zPos); b2.castShadow = true; b2.receiveShadow = true;
+			scene.add(b2); activeDecorations.push(b2);
+		}
 
-        for (const [id, data] of Object.entries(CHARACTERS)) {
-            const isOwned = GameData.unlockedChars.includes(id);
-            const isEquipped = GameData.curChar === id;
-            
-            let btnClass = isEquipped ? "buy-btn equipped" : (isOwned ? "buy-btn select" : "buy-btn");
-            let btnText = isEquipped ? LANG[currentLang].equipped : (isOwned ? LANG[currentLang].equip : `${LANG[currentLang].buy} ${data.cost}`);
-            // Use window.CharSys to ensure global access in onclick string
-            let clickAction = isOwned ? `CharSys.equip('${id}')` : `CharSys.buy('${id}')`;
+		function spawnObstacle(zPos) {
+			if (jetpackActive) { for (let i = 0; i < 3; i++) spawnCoins(CONFIG.LANES[i], zPos, CONFIG.JETPACK_HEIGHT); }
+			const rand = Math.random();
+			const laneIdx = Math.floor(Math.random() * 3);
+			const laneX = CONFIG.LANES[laneIdx];
+			const now = Date.now();
 
-            grid.innerHTML += `
+			if (rand < 0.05) {
+				const mag = createMagnetModel(); mag.position.set(laneX, 1.0, zPos); scene.add(mag); activeMagnets.push(mag);
+			} else if (rand < 0.10) {
+				const jet = createJetpackModel(); jet.position.set(laneX, 1.0, zPos); scene.add(jet); activeJetpacks.push(jet);
+			} else {
+				let mesh;
+				const obstacleType = Math.random();
+				let canSpawnTrain = (now - world.lastMovingTrainTime) > CONFIG.TRAIN_COOLDOWN;
+
+				if (canSpawnTrain && obstacleType < 0.25) {
+					mesh = createTrainModel(true);
+					mesh.position.set(laneX, 0, zPos - CONFIG.MOVING_TRAIN_SPAWN_OFFSET);
+					world.lastMovingTrainTime = now;
+				} else if (obstacleType < 0.6) {
+					mesh = createTrainModel(false); mesh.position.set(laneX, 0, zPos);
+				} else if (obstacleType < 0.8) {
+					const group = new THREE.Group();
+					const pole = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3, 0.2), new THREE.MeshLambertMaterial({ color: 0x7F8C8D }));
+					const p1 = pole.clone(); p1.position.set(-1.2, 1.5, 0); const p2 = pole.clone(); p2.position.set(1.2, 1.5, 0);
+					const bar = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1, 0.2), new THREE.MeshLambertMaterial({ color: 0x27AE60 }));
+					bar.position.set(0, 2.5, 0); group.add(p1, p2, bar); group.position.set(laneX, 0, zPos);
+					mesh = group; mesh.userData.isHigh = true;
+				} else {
+					mesh = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.8, 0.5), new THREE.MeshLambertMaterial({ color: 0xE67E22 }));
+					mesh.position.set(laneX, 0.4, zPos);
+				}
+				if (mesh.isMesh || mesh.isGroup) {
+					mesh.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+				}
+				scene.add(mesh); activeObstacles.push(mesh);
+			}
+
+			if (!jetpackActive) { const coinLane = (laneIdx + 1) % 3; spawnCoins(CONFIG.LANES[coinLane], zPos, 0.8); }
+			spawnBuilding(zPos);
+		}
+
+		function spawnCoins(x, z, height) {
+			if (Math.random() > 0.6) return;
+			for (let i = 0; i < 5; i++) {
+				const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.coin, shininess: 80 }));
+				coin.rotation.z = Math.PI / 2; coin.position.set(x, height, z + (i * 1.5));
+				coin.userData = { isCoin: true, collected: false };
+				scene.add(coin); activeCoins.push(coin);
+			}
+		}
+
+		function startGame(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			if (document.getElementById('play-btn')) document.getElementById('play-btn').blur();
+
+			// 播放BGM
+			AudioSys.init();
+			AudioSys.startBGM();
+
+			[activeObstacles, activeCoins, activeMagnets, activeJetpacks, activeDecorations].forEach(arr => {
+				arr.forEach(o => scene.remove(o)); arr.length = 0;
+			});
+			activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0;
+			for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
+			for (let i = 10; i < 150; i += 25) { spawnBuilding(-i); }
+
+			player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
+			camera.position.set(0, 5, 8); camera.rotation.set(-0.3, 0, 0);
+
+			targetLane = 1; speed = CONFIG.PLAYER_SPEED_BASE;
+			score = 0; coins = 0; distance = 0; survivalTime = 0;
+			isJumping = false; isSliding = false; verticalVelocity = 0;
+			cycleTime = 0;
+
+			magnetActive = false; magnetTimer = 0;
+			jetpackActive = false; jetpackTimer = 0;
+			isPaused = false;
+			world.lastMovingTrainTime = 0;
+
+			document.getElementById('magnet-status').classList.remove('active');
+			document.getElementById('jetpack-status').classList.remove('active');
+
+			if (player && player.userData && player.userData.pack) {
+				player.userData.pack.visible = false;
+			}
+
+			let autoUsed = false;
+			if (GameData.settings.autoJetpack && GameData.inventory.jetpack > 0) {
+				GameData.inventory.jetpack--; activateJetpack(); autoUsed = true;
+			} else if (GameData.settings.autoMagnet && GameData.inventory.magnet > 0) {
+				GameData.inventory.magnet--; activateMagnet(); autoUsed = true;
+			}
+			if (autoUsed) GameData.save();
+
+			world.lastSpawnZ = 0;
+			gameActive = true;
+			updateHUD();
+
+			document.getElementById('main-menu').classList.add('hidden');
+			document.getElementById('game-over').classList.add('hidden');
+			document.getElementById('pause-btn').classList.remove('hidden');
+			document.getElementById('hud-panel').classList.remove('hidden');
+		}
+		window.startGame = startGame;
+
+		function updateDayNightCycle(delta) {
+			cycleTime += delta;
+			const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION;
+
+			let skyColor, sunColor = 0xFFFFDD, lightIntensity = 0.4, emissiveIntensity = 0.2;
+
+			if (progress < 0.2) {
+				const t = progress / 0.2;
+				skyColor = new THREE.Color(CONFIG.COLORS.skyNight).lerp(new THREE.Color(CONFIG.COLORS.skySunrise), t);
+				lightIntensity = 0.3 + t * 0.5; emissiveIntensity = 0.5 * (1 - t);
+			} else if (progress < 0.5) {
+				const t = (progress - 0.2) / 0.3;
+				skyColor = new THREE.Color(CONFIG.COLORS.skySunrise).lerp(new THREE.Color(CONFIG.COLORS.skyDay), t);
+				lightIntensity = 0.8 + t * 0.4; emissiveIntensity = 0; sunColor = 0xFFFFAA;
+			} else if (progress < 0.7) {
+				const t = (progress - 0.5) / 0.2;
+				skyColor = new THREE.Color(CONFIG.COLORS.skyDay).lerp(new THREE.Color(CONFIG.COLORS.skySunset), t);
+				lightIntensity = 1.2 - t * 0.6; emissiveIntensity = t * 0.3; sunColor = 0xFFCC00;
+			} else {
+				const t = (progress - 0.7) / 0.3;
+				skyColor = new THREE.Color(CONFIG.COLORS.skySunset).lerp(new THREE.Color(CONFIG.COLORS.skyNight), t);
+				lightIntensity = 0.6 - t * 0.3; emissiveIntensity = 0.3 + t * 0.2; sunColor = 0xDDDDFF;
+			}
+
+			scene.background = skyColor; scene.fog.color = skyColor;
+			ambientLight.intensity = lightIntensity * 0.6; dirLight.intensity = lightIntensity;
+
+			const angle = progress * Math.PI * 2;
+			sunMesh.position.x = Math.cos(angle) * 100; sunMesh.position.y = Math.sin(angle) * 100;
+			sunMesh.material.color.setHex(sunColor);
+
+			buildingMaterials.forEach(mat => { mat.emissiveIntensity = emissiveIntensity; });
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+			const delta = clock.getDelta();
+
+			if (gameActive) {
+				if (!isPaused) {
+					updateDayNightCycle(delta);
+
+					const moveDist = speed * delta;
+					player.position.z -= moveDist;
+					distance += moveDist;
+
+					if (speed < CONFIG.PLAYER_SPEED_MAX) { speed += CONFIG.SPEED_ACCELERATION * delta; }
+
+					const tx = CONFIG.LANES[targetLane];
+					player.position.x += (tx - player.position.x) * 10 * delta;
+
+					activeObstacles.forEach(obs => {
+						if (obs.userData.isMovingTrain) {
+							obs.position.z += obs.userData.trainSpeed * delta;
+						}
+					});
+
+					let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
+
+					if (jetpackActive) {
+						jetpackTimer -= delta;
+						document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
+						if (jetpackTimer <= 0) { jetpackActive = false; document.getElementById('jetpack-status').classList.remove('active'); }
+
+						player.userData.pack.visible = true;
+						const hoverWave = Math.sin(Date.now() * 0.005) * 0.3;
+						const targetH = CONFIG.JETPACK_HEIGHT + hoverWave;
+						player.position.y += (targetH - player.position.y) * 5 * delta;
+
+						player.rotation.x = 0.2; player.rotation.z = -(tx - player.position.x) * 0.15;
+						player.userData.flames.forEach(f => {
+							f.visible = true; const pulse = 1.5 + Math.sin(Date.now() * 0.02) * 0.5;
+							f.scale.set(pulse, pulse * 1.2, pulse);
+						});
+						player.userData.lLeg.position.z = -0.1; player.userData.rLeg.position.z = -0.1;
+						player.userData.lLeg.rotation.x = -0.2 + hoverWave * 0.2; player.userData.rLeg.rotation.x = -0.2 + hoverWave * 0.2;
+						player.userData.lArm.rotation.x = -0.5; player.userData.rArm.rotation.x = -0.5;
+						isJumping = false; isSliding = false;
+
+						// V20 Camera Fix: Higher & Tilted Down
+						targetY = 12;       // 拉高高度，越过头顶
+						targetZOffset = 14; // 稍微往后拉一点点
+						targetRotX = -0.45; // 向下俯视，把角色压到屏幕下方
+					} else {
+						player.userData.pack.visible = false;
+						player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15;
+						if (isJumping) {
+							player.position.y += verticalVelocity; verticalVelocity -= CONFIG.GRAVITY;
+							if (player.position.y <= 0) { player.position.y = 0; isJumping = false; }
+						} else {
+							if (player.position.y > 0) player.position.y -= CONFIG.GRAVITY * 10;
+							if (player.position.y < 0) player.position.y = 0;
+						}
+						if (isSliding) {
+							slideTimer -= delta; player.scale.y = 0.5;
+							if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
+						}
+						if (!isJumping && !isSliding) {
+							const time = Date.now() * 0.015;
+							player.userData.lLeg.rotation.x = 0; player.userData.rLeg.rotation.x = 0;
+							player.userData.lLeg.position.z = Math.sin(time) * 0.2; player.userData.rLeg.position.z = Math.cos(time) * 0.2;
+							player.userData.lArm.rotation.x = Math.cos(time) * 0.5; player.userData.rArm.rotation.x = Math.sin(time) * 0.5;
+						}
+					}
+
+					camera.position.y += (targetY - camera.position.y) * 3 * delta;
+					const desiredZ = player.position.z + targetZOffset;
+					camera.position.z += (desiredZ - camera.position.z) * 5 * delta;
+					camera.position.x = player.position.x * 0.4;
+					camera.rotation.x += (targetRotX - camera.rotation.x) * 3 * delta;
+
+					if (magnetActive) {
+						magnetTimer -= delta;
+						document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
+						if (magnetTimer <= 0) { magnetActive = false; document.getElementById('magnet-status').classList.remove('active'); }
+						activeCoins.forEach(coin => {
+							if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) coin.userData.attracted = true;
+							if (coin.userData.attracted) {
+								const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
+								coin.position.add(target.sub(coin.position).normalize().multiplyScalar(30 * delta));
+								if (coin.position.distanceTo(player.position) < 1.0) collectCoin(coin);
+							}
+						});
+					}
+
+					updateWorldGen();
+					checkCollisions();
+					score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
+					updateHUD();
+				}
+			} else {
+				const t = Date.now() * 0.002;
+				player.position.y = Math.sin(t) * 0.1;
+				player.rotation.y += 0.01;
+			}
+			renderer.render(scene, camera);
+		}
+
+		function checkCollisions() {
+			const pBox = new THREE.Box3().setFromObject(player);
+			pBox.min.x += 0.3; pBox.max.x -= 0.3; pBox.min.z += 0.2; pBox.max.z -= 0.2;
+
+			if (!jetpackActive) {
+				for (let obs of activeObstacles) {
+					if (pBox.intersectsBox(new THREE.Box3().setFromObject(obs))) {
+						if (isSliding && obs.userData.isHigh) continue;
+						gameOver(); return;
+					}
+				}
+			}
+
+			const checkItem = (list, action) => {
+				for (let i = list.length - 1; i >= 0; i--) {
+					const item = list[i]; item.rotation.y += 0.05;
+					const iBox = new THREE.Box3().setFromObject(item); iBox.expandByScalar(0.5);
+					if (pBox.intersectsBox(iBox)) { action(); scene.remove(item); list.splice(i, 1); }
+				}
+			};
+			checkItem(activeMagnets, activateMagnet);
+			checkItem(activeJetpacks, activateJetpack);
+
+			for (let i = activeCoins.length - 1; i >= 0; i--) {
+				const coin = activeCoins[i];
+				if (coin.userData.collected) continue;
+				coin.rotation.y += 0.1;
+				if (pBox.intersectsBox(new THREE.Box3().setFromObject(coin))) collectCoin(coin);
+			}
+		}
+
+		function activateMagnet() {
+			magnetActive = true; magnetTimer = CONFIG.MAGNET_DURATION;
+			document.getElementById('magnet-status').classList.add('active');
+			AudioSys.playPowerup();
+		}
+		function activateJetpack() {
+			jetpackActive = true; jetpackTimer = CONFIG.JETPACK_DURATION;
+			document.getElementById('jetpack-status').classList.add('active');
+			AudioSys.playPowerup();
+		}
+
+		function collectCoin(coin) {
+			if (coin.userData.collected) return;
+			coin.userData.collected = true;
+
+			const currentMultiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
+			coins += currentMultiplier;
+
+			scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1);
+			AudioSys.playCoin();
+		}
+
+		function updateWorldGen() {
+			if (activeTracks[0].position.z > player.position.z + CONFIG.TRACK_LENGTH) {
+				const seg = activeTracks.shift(); seg.position.z = activeTracks[activeTracks.length - 1].position.z - CONFIG.TRACK_LENGTH; activeTracks.push(seg);
+			}
+			if (world.lastSpawnZ > player.position.z - 80) { world.lastSpawnZ -= 25; spawnObstacle(world.lastSpawnZ); }
+			const clean = (arr) => { for (let i = arr.length - 1; i >= 0; i--) { if (arr[i].position.z > player.position.z + 20) { scene.remove(arr[i]); arr.splice(i, 1); } } };
+			clean(activeObstacles); clean(activeCoins); clean(activeMagnets); clean(activeJetpacks); clean(activeDecorations);
+		}
+
+		// --- V23: CHARACTER SYSTEM LOGIC ---
+		const CharSys = {
+			show: function (e) {
+				if (e && e.stopPropagation) e.stopPropagation();
+				this.render();
+				// Hide Main Menu to prevent bugs
+				document.getElementById('main-menu').classList.add('hidden');
+				document.getElementById('char-screen').classList.remove('hidden');
+			},
+			close: function (e) {
+				if (e && e.stopPropagation) e.stopPropagation();
+				document.getElementById('char-screen').classList.add('hidden');
+				document.getElementById('main-menu').classList.remove('hidden');
+			},
+			render: function () {
+				const grid = document.getElementById('char-grid');
+				grid.innerHTML = '';
+				document.getElementById('char-coin-count').innerText = GameData.coins;
+				document.getElementById('char-title').innerText = LANG[currentLang].charTitle;
+				document.getElementById('char-close-btn').innerText = LANG[currentLang].charBack;
+
+				for (const [id, data] of Object.entries(CHARACTERS)) {
+					const isOwned = GameData.unlockedChars.includes(id);
+					const isEquipped = GameData.curChar === id;
+
+					let btnClass = isEquipped ? "buy-btn equipped" : (isOwned ? "buy-btn select" : "buy-btn");
+					let btnText = isEquipped ? LANG[currentLang].equipped : (isOwned ? LANG[currentLang].equip : `${LANG[currentLang].buy} ${data.cost}`);
+					// Use window.CharSys to ensure global access in onclick string
+					let clickAction = isOwned ? `CharSys.equip('${id}')` : `CharSys.buy('${id}')`;
+
+					grid.innerHTML += `
                 <div class="store-item">
                     <div class="item-icon" style="color:#${new THREE.Color(data.color).getHexString()}">🤖</div>
                     <div class="item-name">${data.name}</div>
@@ -1204,233 +1874,236 @@ const CharSys = {
                     </button>
                 </div>
             `;
-        }
-    },
-    buy: function(id) {
-        const char = CHARACTERS[id];
-        if (GameData.coins >= char.cost) {
-            GameData.coins -= char.cost;
-            GameData.unlockedChars.push(id);
-            GameData.curChar = id;
-            GameData.save();
-            AudioSys.playCoin();
-            this.render();
-            // Update player model in background immediately
-            createPlayerModel();
-        }
-    },
-    equip: function(id) {
-        GameData.curChar = id;
-        GameData.save();
-        this.render();
-        createPlayerModel();
-    }
-};
-window.CharSys = CharSys;
+				}
+			},
+			buy: function (id) {
+				const char = CHARACTERS[id];
+				if (GameData.coins >= char.cost) {
+					GameData.coins -= char.cost;
+					GameData.unlockedChars.push(id);
+					GameData.curChar = id;
+					GameData.save();
+					AudioSys.playCoin();
+					this.render();
+					// Update player model in background immediately
+					createPlayerModel();
+				}
+			},
+			equip: function (id) {
+				GameData.curChar = id;
+				GameData.save();
+				this.render();
+				createPlayerModel();
+			}
+		};
+		window.CharSys = CharSys;
 
-// --- GLOBAL BINDINGS ---
-const Store = {
-    updateUI: function() {
-        document.getElementById('store-coin-count').innerText = GameData.coins;
-        document.getElementById('item-own-mag').innerText = LANG[currentLang].itemOwn + GameData.inventory.magnet;
-        document.getElementById('buy-mag-btn').disabled = GameData.coins < CONFIG.COST_MAGNET;
-        document.getElementById('check-mag').checked = GameData.settings.autoMagnet;
-        document.getElementById('item-own-jet').innerText = LANG[currentLang].itemOwn + GameData.inventory.jetpack;
-        document.getElementById('buy-jet-btn').disabled = GameData.coins < CONFIG.COST_JETPACK;
-        document.getElementById('check-jet').checked = GameData.settings.autoJetpack;
-    },
-    buy: function(item) {
-        if (item === 'magnet' && GameData.coins >= CONFIG.COST_MAGNET) { 
-            GameData.coins -= CONFIG.COST_MAGNET; GameData.inventory.magnet++; 
-            AudioSys.playCoin(); 
-        } 
-        else if (item === 'jetpack' && GameData.coins >= CONFIG.COST_JETPACK) { 
-            GameData.coins -= CONFIG.COST_JETPACK; GameData.inventory.jetpack++; 
-            AudioSys.playCoin(); 
-        }
-        GameData.save(); this.updateUI(); updateHUD();
-    },
-    toggle: function(item) {
-        if (item === 'magnet') GameData.settings.autoMagnet = document.getElementById('check-mag').checked;
-        if (item === 'jetpack') GameData.settings.autoJetpack = document.getElementById('check-jet').checked;
-        GameData.save();
-    },
-    show: function(e) {
-        if(e && e.stopPropagation) e.stopPropagation();
-        this.updateUI();
-        document.getElementById('store-screen').classList.remove('hidden');
-        document.getElementById('main-menu').classList.add('hidden');
-    }
-};
-window.Store = Store;
+		// --- GLOBAL BINDINGS ---
+		const Store = {
+			updateUI: function () {
+				document.getElementById('store-coin-count').innerText = GameData.coins;
+				document.getElementById('item-own-mag').innerText = LANG[currentLang].itemOwn + GameData.inventory.magnet;
+				document.getElementById('buy-mag-btn').disabled = GameData.coins < CONFIG.COST_MAGNET;
+				document.getElementById('check-mag').checked = GameData.settings.autoMagnet;
+				document.getElementById('item-own-jet').innerText = LANG[currentLang].itemOwn + GameData.inventory.jetpack;
+				document.getElementById('buy-jet-btn').disabled = GameData.coins < CONFIG.COST_JETPACK;
+				document.getElementById('check-jet').checked = GameData.settings.autoJetpack;
+			},
+			buy: function (item) {
+				if (item === 'magnet' && GameData.coins >= CONFIG.COST_MAGNET) {
+					GameData.coins -= CONFIG.COST_MAGNET; GameData.inventory.magnet++;
+					AudioSys.playCoin();
+				}
+				else if (item === 'jetpack' && GameData.coins >= CONFIG.COST_JETPACK) {
+					GameData.coins -= CONFIG.COST_JETPACK; GameData.inventory.jetpack++;
+					AudioSys.playCoin();
+				}
+				GameData.save(); this.updateUI(); updateHUD();
+			},
+			toggle: function (item) {
+				if (item === 'magnet') GameData.settings.autoMagnet = document.getElementById('check-mag').checked;
+				if (item === 'jetpack') GameData.settings.autoJetpack = document.getElementById('check-jet').checked;
+				GameData.save();
+			},
+			show: function (e) {
+				if (e && e.stopPropagation) e.stopPropagation();
+				this.updateUI();
+				document.getElementById('store-screen').classList.remove('hidden');
+				document.getElementById('main-menu').classList.add('hidden');
+			}
+		};
+		window.Store = Store;
 
-function closeStore(e) {
-    if(e && e.stopPropagation) e.stopPropagation();
-    document.getElementById('store-screen').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
-}
-window.closeStore = closeStore;
+		function closeStore(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			document.getElementById('store-screen').classList.add('hidden');
+			document.getElementById('main-menu').classList.remove('hidden');
+		}
+		window.closeStore = closeStore;
 
-function togglePause(e) {
-    if(e && e.stopPropagation) e.stopPropagation();
-    if (!gameActive) return;
-    isPaused = !isPaused;
-    
-    if (isPaused) {
-        document.getElementById('pause-screen').classList.remove('hidden');
-        document.getElementById('pause-btn').classList.add('hidden'); 
-        AudioSys.stopBGM();
-    } else {
-        document.getElementById('pause-screen').classList.add('hidden');
-        document.getElementById('pause-btn').classList.remove('hidden');
-        clock.getDelta(); 
-        AudioSys.startBGM();
-    }
-}
-window.togglePause = togglePause;
+		function togglePause(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			if (!gameActive) return;
+			isPaused = !isPaused;
 
-function goHome(e) {
-    if(e && e.stopPropagation) e.stopPropagation();
-    gameActive = false;
-    isPaused = false; 
-    AudioSys.stopBGM();
-    
-    document.getElementById('game-over').classList.add('hidden');
-    document.getElementById('pause-screen').classList.add('hidden');
-    document.getElementById('pause-btn').classList.add('hidden');
-    document.getElementById('hud-panel').classList.add('hidden'); 
-    document.getElementById('main-menu').classList.remove('hidden');
-    
-    if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
-    
-    // Reset Camera
-    camera.position.set(0, 4, 10); 
-    camera.rotation.set(-0.1, 0, 0); 
-    
-    if(player) {
-        player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
-        if(player.userData.pack) player.userData.pack.visible = false;
-        if(player.userData.flames) player.userData.flames.forEach(f => f.visible = false);
-    }
-    try {
-        const cleanup = (arr) => { if(arr) { arr.forEach(o => scene.remove(o)); arr.length = 0; } };
-        cleanup(activeObstacles); cleanup(activeCoins); cleanup(activeMagnets); cleanup(activeJetpacks); cleanup(activeDecorations);
-        if(activeTracks) { activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0; for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH); }
-        world.lastSpawnZ = 0;
-    } catch(e) { console.warn("Cleanup warning:", e); }
-}
-window.goHome = goHome;
+			if (isPaused) {
+				document.getElementById('pause-screen').classList.remove('hidden');
+				document.getElementById('pause-btn').classList.add('hidden');
+				AudioSys.stopBGM();
+			} else {
+				document.getElementById('pause-screen').classList.add('hidden');
+				document.getElementById('pause-btn').classList.remove('hidden');
+				clock.getDelta();
+				AudioSys.startBGM();
+			}
+		}
+		window.togglePause = togglePause;
 
-const Leaderboard={data:[],sortField:'score',sortDesc:true,load:function(){this.data=JSON.parse(localStorage.getItem('moonChaser_ranks')||'[]')},save:function(n,s,t){this.load();this.data.push({name:n||"Guest",score:s,time:t});localStorage.setItem('moonChaser_ranks',JSON.stringify(this.data))},
-show:function(e){
-    if(e && e.stopPropagation) e.stopPropagation();
-    this.load();this.render();document.getElementById('leaderboard-screen').classList.remove('hidden');
-    document.getElementById('main-menu').classList.add('hidden');
-},sort:function(f){if(this.sortField===f)this.sortDesc=!this.sortDesc;else{this.sortField=f;this.sortDesc=true}this.render()},render:function(){const b=document.getElementById('lb-body');b.innerHTML='';['name','score','time'].forEach(f=>document.getElementById(`sort-${f}`).innerText=(this.sortField===f?(this.sortDesc?'▼':'▲'):''));this.data.sort((a,c)=>{let va=a[this.sortField],vb=c[this.sortField];if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase()}return(va<vb?(this.sortDesc?1:-1):(va>vb?(this.sortDesc?-1:1):0))});const l=Math.min(10,this.data.length);if(l===0)b.innerHTML=`<tr><td colspan="4" style="padding:20px;color:#999;">${LANG[currentLang].lbNoRecord}</td></tr>`;for(let i=0;i<l;i++){const d=this.data[i],m=Math.floor(d.time/60).toString().padStart(2,'0'),s=Math.floor(d.time%60).toString().padStart(2,'0');const c=i===0?'#FFD700':(i===1?'#C0C0C0':(i===2?'#CD7F32':'white'));b.innerHTML+=`<tr><td style="color:${c}">#${i+1}</td><td style="color:${c}">${d.name}</td><td>${d.score}</td><td>${m}:${s}</td></tr>`}}};
-window.Leaderboard = Leaderboard;
+		function goHome(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			gameActive = false;
+			isPaused = false;
+			AudioSys.stopBGM();
 
-document.getElementById('lb-close-btn').onclick = (e) => {
-    if(e && e.stopPropagation) e.stopPropagation();
-    document.getElementById('leaderboard-screen').classList.add('hidden');
-    document.getElementById('main-menu').classList.remove('hidden');
-};
+			document.getElementById('game-over').classList.add('hidden');
+			document.getElementById('pause-screen').classList.add('hidden');
+			document.getElementById('pause-btn').classList.add('hidden');
+			document.getElementById('hud-panel').classList.add('hidden');
+			document.getElementById('main-menu').classList.remove('hidden');
 
-function updateHUD() {
-    document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
-    document.getElementById('coin-display').innerText = coins;
-    
-    const multiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
-    const multElem = document.getElementById('coin-multiplier');
-    if(multElem) {
-        multElem.innerText = "x" + multiplier;
-        multElem.style.color = multiplier > 5 ? '#FF0000' : (multiplier > 2 ? '#FFFF00' : '#00FFFF');
-    }
+			if (document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
 
-    const speedVal = (speed / CONFIG.PLAYER_SPEED_BASE).toFixed(1);
-    document.getElementById('speed-indicator').innerText = "SPEED: " + speedVal + "x";
-    if(document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
-}
+			// Reset Camera
+			camera.position.set(0, 4, 10);
+			camera.rotation.set(-0.1, 0, 0);
 
-function gameOver() {
-    gameActive = false;
-    AudioSys.stopBGM();
-    AudioSys.playCrash(); 
-    
-    document.getElementById('hud-panel').classList.add('hidden');
-    document.getElementById('pause-btn').classList.add('hidden');
-    document.getElementById('game-over').classList.remove('hidden');
-    document.getElementById('final-score-val').innerText = score;
-    camera.lookAt(player.position);
-    GameData.addCoins(coins);
-}
+			if (player) {
+				player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
+				if (player.userData.pack) player.userData.pack.visible = false;
+				if (player.userData.flames) player.userData.flames.forEach(f => f.visible = false);
+			}
+			try {
+				const cleanup = (arr) => { if (arr) { arr.forEach(o => scene.remove(o)); arr.length = 0; } };
+				cleanup(activeObstacles); cleanup(activeCoins); cleanup(activeMagnets); cleanup(activeJetpacks); cleanup(activeDecorations);
+				if (activeTracks) { activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0; for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH); }
+				world.lastSpawnZ = 0;
+			} catch (e) { console.warn("Cleanup warning:", e); }
+		}
+		window.goHome = goHome;
 
-function updateLocalization() {
-    const t = LANG[currentLang];
-    document.querySelector('#main-menu .game-title').innerHTML = t.title;
-    document.getElementById('play-btn').innerText = t.play;
-    document.getElementById('rank-btn').innerText = t.rankBtn;
-    document.getElementById('controls-hint').innerHTML = t.controls;
-    document.querySelector('#game-over .game-title').innerText = t.crashed;
-    document.querySelector('#final-score-box div:first-child').innerText = t.score;
-    document.getElementById('restart-btn').innerText = t.lbSave;
-    document.getElementById('home-btn').innerText = t.mainMenu;
-    document.getElementById('name-input').placeholder = t.lbPlaceholder;
-    document.getElementById('lb-title-text').innerText = t.lbTitle;
-    document.getElementById('th-rank').innerText = t.lbRank;
-    document.getElementById('th-name').firstChild.textContent = t.lbName+" ";
-    document.getElementById('th-score').firstChild.textContent = t.lbScore+" ";
-    document.getElementById('th-time').firstChild.textContent = t.lbTime+" ";
-    document.getElementById('lb-close-btn').innerText = t.lbClose;
-    document.getElementById('store-btn').innerText = t.storeBtn;
-    document.querySelector('.store-header .game-title').innerText = t.storeTitle;
-    document.getElementById('store-close-btn').innerText = t.storeBack;
-    document.getElementById('item-name-mag').innerText = t.itemNameMag;
-    document.getElementById('item-desc-mag').innerText = t.itemDescMag;
-    document.getElementById('auto-use-mag').innerText = t.autoUse;
-    document.getElementById('item-name-jet').innerText = t.itemNameJet;
-    document.getElementById('item-desc-jet').innerText = t.itemDescJet;
-    document.getElementById('auto-use-jet').innerText = t.autoUse;
-    document.getElementById('pause-title').innerText = t.pauseTitle;
-    document.getElementById('resume-btn').innerText = t.resume;
-    document.getElementById('pause-home-btn').innerText = t.pauseMenu;
+		const Leaderboard = {
+			data: [], sortField: 'score', sortDesc: true, load: function () { this.data = JSON.parse(localStorage.getItem('moonChaser_ranks') || '[]') }, save: function (n, s, t) { this.load(); this.data.push({ name: n || "Guest", score: s, time: t }); localStorage.setItem('moonChaser_ranks', JSON.stringify(this.data)) },
+			show: function (e) {
+				if (e && e.stopPropagation) e.stopPropagation();
+				this.load(); this.render(); document.getElementById('leaderboard-screen').classList.remove('hidden');
+				document.getElementById('main-menu').classList.add('hidden');
+			}, sort: function (f) { if (this.sortField === f) this.sortDesc = !this.sortDesc; else { this.sortField = f; this.sortDesc = true } this.render() }, render: function () { const b = document.getElementById('lb-body'); b.innerHTML = '';['name', 'score', 'time'].forEach(f => document.getElementById(`sort-${f}`).innerText = (this.sortField === f ? (this.sortDesc ? '▼' : '▲') : '')); this.data.sort((a, c) => { let va = a[this.sortField], vb = c[this.sortField]; if (typeof va === 'string') { va = va.toLowerCase(); vb = vb.toLowerCase() } return (va < vb ? (this.sortDesc ? 1 : -1) : (va > vb ? (this.sortDesc ? -1 : 1) : 0)) }); const l = Math.min(10, this.data.length); if (l === 0) b.innerHTML = `<tr><td colspan="4" style="padding:20px;color:#999;">${LANG[currentLang].lbNoRecord}</td></tr>`; for (let i = 0; i < l; i++) { const d = this.data[i], m = Math.floor(d.time / 60).toString().padStart(2, '0'), s = Math.floor(d.time % 60).toString().padStart(2, '0'); const c = i === 0 ? '#FFD700' : (i === 1 ? '#C0C0C0' : (i === 2 ? '#CD7F32' : 'white')); b.innerHTML += `<tr><td style="color:${c}">#${i + 1}</td><td style="color:${c}">${d.name}</td><td>${d.score}</td><td>${m}:${s}</td></tr>` } }
+		};
+		window.Leaderboard = Leaderboard;
 
-    // V23: Char Screen Loc
-    document.getElementById('char-btn').innerText = t.charTitle;
-    if(!document.getElementById('leaderboard-screen').classList.contains('hidden')) Leaderboard.render();
-    if(!document.getElementById('store-screen').classList.contains('hidden')) Store.updateUI();
-    if(!document.getElementById('char-screen').classList.contains('hidden')) CharSys.render();
-}
+		document.getElementById('lb-close-btn').onclick = (e) => {
+			if (e && e.stopPropagation) e.stopPropagation();
+			document.getElementById('leaderboard-screen').classList.add('hidden');
+			document.getElementById('main-menu').classList.remove('hidden');
+		};
 
-function setupInputs() {
-    document.addEventListener('keydown', e => { 
-        if (isPaused) return;
-        if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault(); 
-        if(!gameActive) return; 
-        if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A') { if(targetLane>0) targetLane--; } 
-        if(e.key==='ArrowRight'||e.key==='d'||e.key==='D') { if(targetLane<2) targetLane++; } 
-        if(e.key==='ArrowUp'||e.key==='w'||e.key==='W'||e.key===' ') { if(!isJumping&&!jetpackActive) { isJumping=true; verticalVelocity=CONFIG.JUMP_FORCE; isSliding=false; player.scale.y=1; } } 
-        if(e.key==='ArrowDown'||e.key==='s'||e.key==='S') { if(!isJumping&&!jetpackActive) { isSliding=true; slideTimer=0.8; verticalVelocity=-0.5; } } 
-        if(e.key === 'Escape') togglePause();
-    });
-    
-    let tx=0, ty=0;
-    document.addEventListener('touchstart', e=>{tx=e.changedTouches[0].screenX; ty=e.changedTouches[0].screenY;}, {passive:false});
-    document.addEventListener('touchmove', e=>{if(gameActive)e.preventDefault();}, {passive:false});
-    document.addEventListener('touchend', e=>{ 
-        if(!gameActive || isPaused) return; 
-        const dx=e.changedTouches[0].screenX-tx, dy=e.changedTouches[0].screenY-ty; 
-        if(Math.abs(dx)>Math.abs(dy)) { if(Math.abs(dx)>30) dx>0?(targetLane<2&&targetLane++):(targetLane>0&&targetLane--); } 
-        else { if(Math.abs(dy)>30) dy<0?(!isJumping&&!jetpackActive&&(isJumping=true,verticalVelocity=CONFIG.JUMP_FORCE,isSliding=false,player.scale.y=1)):(!jetpackActive&&(isSliding=true,slideTimer=0.8,verticalVelocity=-0.5)); } 
-    });
-}
+		function updateHUD() {
+			document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
+			document.getElementById('coin-display').innerText = coins;
 
-function setupUI() {
-    document.getElementById('restart-btn').onclick = () => { Leaderboard.save(document.getElementById('name-input').value.trim(), score, survivalTime); startGame(); };
-    document.getElementById('lang-btn').onclick = () => { currentLang = currentLang==='en'?'cn':'en'; updateLocalization(); };
-    updateLocalization();
-}
+			const multiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
+			const multElem = document.getElementById('coin-multiplier');
+			if (multElem) {
+				multElem.innerText = "x" + multiplier;
+				multElem.style.color = multiplier > 5 ? '#FF0000' : (multiplier > 2 ? '#FFFF00' : '#00FFFF');
+			}
 
-init();
-</script>
+			const speedVal = (speed / CONFIG.PLAYER_SPEED_BASE).toFixed(1);
+			document.getElementById('speed-indicator').innerText = "SPEED: " + speedVal + "x";
+			if (document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
+		}
+
+		function gameOver() {
+			gameActive = false;
+			AudioSys.stopBGM();
+			AudioSys.playCrash();
+
+			document.getElementById('hud-panel').classList.add('hidden');
+			document.getElementById('pause-btn').classList.add('hidden');
+			document.getElementById('game-over').classList.remove('hidden');
+			document.getElementById('final-score-val').innerText = score;
+			camera.lookAt(player.position);
+			GameData.addCoins(coins);
+		}
+
+		function updateLocalization() {
+			const t = LANG[currentLang];
+			document.querySelector('#main-menu .game-title').innerHTML = t.title;
+			document.getElementById('play-btn').innerText = t.play;
+			document.getElementById('rank-btn').innerText = t.rankBtn;
+			document.getElementById('controls-hint').innerHTML = t.controls;
+			document.querySelector('#game-over .game-title').innerText = t.crashed;
+			document.querySelector('#final-score-box div:first-child').innerText = t.score;
+			document.getElementById('restart-btn').innerText = t.lbSave;
+			document.getElementById('home-btn').innerText = t.mainMenu;
+			document.getElementById('name-input').placeholder = t.lbPlaceholder;
+			document.getElementById('lb-title-text').innerText = t.lbTitle;
+			document.getElementById('th-rank').innerText = t.lbRank;
+			document.getElementById('th-name').firstChild.textContent = t.lbName + " ";
+			document.getElementById('th-score').firstChild.textContent = t.lbScore + " ";
+			document.getElementById('th-time').firstChild.textContent = t.lbTime + " ";
+			document.getElementById('lb-close-btn').innerText = t.lbClose;
+			document.getElementById('store-btn').innerText = t.storeBtn;
+			document.querySelector('.store-header .game-title').innerText = t.storeTitle;
+			document.getElementById('store-close-btn').innerText = t.storeBack;
+			document.getElementById('item-name-mag').innerText = t.itemNameMag;
+			document.getElementById('item-desc-mag').innerText = t.itemDescMag;
+			document.getElementById('auto-use-mag').innerText = t.autoUse;
+			document.getElementById('item-name-jet').innerText = t.itemNameJet;
+			document.getElementById('item-desc-jet').innerText = t.itemDescJet;
+			document.getElementById('auto-use-jet').innerText = t.autoUse;
+			document.getElementById('pause-title').innerText = t.pauseTitle;
+			document.getElementById('resume-btn').innerText = t.resume;
+			document.getElementById('pause-home-btn').innerText = t.pauseMenu;
+
+			// V23: Char Screen Loc
+			document.getElementById('char-btn').innerText = t.charTitle;
+			if (!document.getElementById('leaderboard-screen').classList.contains('hidden')) Leaderboard.render();
+			if (!document.getElementById('store-screen').classList.contains('hidden')) Store.updateUI();
+			if (!document.getElementById('char-screen').classList.contains('hidden')) CharSys.render();
+		}
+
+		function setupInputs() {
+			document.addEventListener('keydown', e => {
+				if (isPaused) return;
+				if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
+				if (!gameActive) return;
+				if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { if (targetLane > 0) targetLane--; }
+				if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { if (targetLane < 2) targetLane++; }
+				if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') { if (!isJumping && !jetpackActive) { isJumping = true; verticalVelocity = CONFIG.JUMP_FORCE; isSliding = false; player.scale.y = 1; } }
+				if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { if (!isJumping && !jetpackActive) { isSliding = true; slideTimer = 0.8; verticalVelocity = -0.5; } }
+				if (e.key === 'Escape') togglePause();
+			});
+
+			let tx = 0, ty = 0;
+			document.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: false });
+			document.addEventListener('touchmove', e => { if (gameActive) e.preventDefault(); }, { passive: false });
+			document.addEventListener('touchend', e => {
+				if (!gameActive || isPaused) return;
+				const dx = e.changedTouches[0].screenX - tx, dy = e.changedTouches[0].screenY - ty;
+				if (Math.abs(dx) > Math.abs(dy)) { if (Math.abs(dx) > 30) dx > 0 ? (targetLane < 2 && targetLane++) : (targetLane > 0 && targetLane--); }
+				else { if (Math.abs(dy) > 30) dy < 0 ? (!isJumping && !jetpackActive && (isJumping = true, verticalVelocity = CONFIG.JUMP_FORCE, isSliding = false, player.scale.y = 1)) : (!jetpackActive && (isSliding = true, slideTimer = 0.8, verticalVelocity = -0.5)); }
+			});
+		}
+
+		function setupUI() {
+			document.getElementById('restart-btn').onclick = () => { Leaderboard.save(document.getElementById('name-input').value.trim(), score, survivalTime); startGame(); };
+			document.getElementById('lang-btn').onclick = () => { currentLang = currentLang === 'en' ? 'cn' : 'en'; updateLocalization(); };
+			updateLocalization();
+		}
+
+		init();
+	</script>
 </body>
+
 </html>
