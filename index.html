@@ -1968,15 +1968,56 @@
 		}
 
 		function createBuildingMaterials() {
-			// 鲜艳的马卡龙色系 (参考图风格)
+			buildingMaterials = [];
 			const colors = [0x48dbfb, 0xff6b6b, 0xfeca57, 0x1dd1a1, 0x5f27cd, 0xff9ff3];
 
 			colors.forEach(col => {
-				// 去掉纹理，改用纯色哑光，这样更像参考图的干净风格
+				const canvas = document.createElement('canvas');
+				canvas.width = 64;
+				canvas.height = 64;
+				const ctx = canvas.getContext('2d');
+
+				// A. 填充底色
+				ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
+				ctx.fillRect(0, 0, 64, 64);
+
+				// B. 画窗户 (修改了这里)
+				ctx.fillStyle = '#ffffdd';
+
+				// --- 修改点 1：增大循环间距 ---
+				// 原来是 y+=12, x+=12。现在改为 18 和 16，间距显著增大。
+				// 起始点也微调了一下让它看起来更居中
+				for (let y = 10; y < 60; y += 18) {
+					for (let x = 8; x < 60; x += 16) {
+						// --- 修改点 2：大幅提高随机跳过的概率 ---
+						// 原来是 > 0.15 (85%几率画)。现在改为 > 0.4 (只有 60% 几率画)。
+						// 意味着接近一半的窗户位是空的。
+						if (Math.random() > 0.4) {
+							// 稍微调整一下窗户大小，让它在稀疏时不那么突兀
+							ctx.fillRect(x, y, 7, 9);
+						}
+					}
+				}
+
+				const texture = new THREE.CanvasTexture(canvas);
+				texture.magFilter = THREE.NearestFilter;
+				texture.minFilter = THREE.NearestFilter;
+				texture.wrapS = THREE.RepeatWrapping;
+				texture.wrapT = THREE.RepeatWrapping;
+
+				// --- 修改点 3：减少垂直重复 ---
+				// 原来是 (1, 5)，太挤了。改为 (1, 3)，让楼层看起来更高挑，视觉压力更小。
+				texture.repeat.set(1, 3);
+
 				const mat = new THREE.MeshStandardMaterial({
-					color: col,
-					roughness: 0.8, // 粗糙一点，不要反光
-					metalness: 0.1  // 稍微一点点金属感保持质感
+					map: texture,
+					color: 0xffffff,
+					roughness: 0.9,
+					metalness: 0.0,
+					emissiveMap: texture,
+					emissive: 0xffffff,
+					// 发光强度稍微降低一点点，配合稀疏感，更柔和
+					emissiveIntensity: 0.35
 				});
 				buildingMaterials.push(mat);
 			});
@@ -2242,31 +2283,34 @@
 			clouds: [],
 			material: null, // 共享材质，用于统一变色
 
+			// --- 1. 初始化：升级材质 ---
 			init: function (scene) {
-				// 使用 FlatShading 的材质，配合低多边形风格
-				this.material = new THREE.MeshPhongMaterial({
+				// 改用 StandardMaterial，以便更好地配合新的光照系统
+				this.material = new THREE.MeshStandardMaterial({
 					color: 0xffffff,
-					shininess: 0,
-					flatShading: true,
-					transparent: true,
-					opacity: 0.9
+					roughness: 1.0,      // 极度粗糙，模拟棉花的质感
+					metalness: 0.0,      // 非金属
+					flatShading: true,   // 保留低多边形的棱角风格
+					transparent: true,   // 开启透明
+					opacity: 0.85,       // 稍微厚实一点，不要太透
+					side: THREE.FrontSide // 优化性能，只渲染正面
 				});
 
 				for (let i = 0; i < CONFIG.CLOUDS.count; i++) {
 					const cloud = this.createCloud();
-					// 随机分布
+					// 随机分布 (保持不变)
 					cloud.position.set(
 						(Math.random() - 0.5) * CONFIG.CLOUDS.rangeX,
 						CONFIG.CLOUDS.minHeight + Math.random() * (CONFIG.CLOUDS.maxHeight - CONFIG.CLOUDS.minHeight),
 						-Math.random() * CONFIG.CLOUDS.depth
 					);
 
-					// 给予每朵云独特的漂浮参数
+					// 给予每朵云独特的漂浮参数 (保持不变)
 					cloud.userData = {
-						speedOffset: 1 + Math.random() * 0.5, // 速度微差
-						bobSpeed: 0.5 + Math.random() * 0.5,  // 上下浮动速度
-						bobAmp: 0.5 + Math.random(),          // 上下浮动幅度
-						rotSpeed: (Math.random() - 0.5) * 0.2 // 自转速度
+						speedOffset: 0.8 + Math.random() * 0.4, // 稍微调慢一点速度，更有巨物感
+						bobSpeed: 0.3 + Math.random() * 0.4,    // 上下浮动慢一点
+						bobAmp: 0.5 + Math.random(),
+						rotSpeed: (Math.random() - 0.5) * 0.1   // 自转慢一点
 					};
 
 					scene.add(cloud);
@@ -2274,33 +2318,58 @@
 				}
 			},
 
+			// --- 2. 创建单朵云：核心升级 ---
 			createCloud: function () {
 				const group = new THREE.Group();
 
-				// 每一朵云由 3-6 个“云泡”组成
-				const puffs = 3 + Math.floor(Math.random() * 4);
-				const geom = new THREE.IcosahedronGeometry(1, 0); // 低多边形球体
+				// 🔥 关键改变：使用细分等级为 1 的几何体。
+				// 0级太尖，2级太圆，1级正好是那种柔和的低多边形风格。
+				const puffGeo = new THREE.IcosahedronGeometry(1, 1);
 
-				for (let i = 0; i < puffs; i++) {
-					const mesh = new THREE.Mesh(geom, this.material);
+				// A. 创建云核心 (一个巨大的主球体)
+				const core = new THREE.Mesh(puffGeo, this.material);
+				const coreScale = 5 + Math.random() * 3; // 核心尺寸
+				core.scale.setScalar(coreScale);
+				// 核心稍微压扁一点，更像云
+				core.scale.y *= 0.8;
+				core.castShadow = false; // 云通常不投射清晰阴影(太耗性能且不好看)
+				group.add(core);
 
-					// 随机大小
-					const scale = 3 + Math.random() * 5;
-					mesh.scale.set(scale, scale, scale);
+				// B. 创建周围的云团簇 (卫星球)
+				// 数量增加到 7-14 个
+				const numPuffs = 7 + Math.floor(Math.random() * 7);
 
-					// 随机位置 (聚拢在一起)
-					mesh.position.set(
-						(Math.random() - 0.5) * 6,
-						(Math.random() - 0.5) * 3,
-						(Math.random() - 0.5) * 4
-					);
+				for (let i = 0; i < numPuffs; i++) {
+					const puff = new THREE.Mesh(puffGeo, this.material);
 
-					// 随机旋转
-					mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+					// 尺寸：比核心小，但互相之间有差异
+					const scale = (coreScale * 0.4) + Math.random() * (coreScale * 0.5);
+					puff.scale.setScalar(scale);
 
-					mesh.castShadow = false; // 云通常不投射生硬的阴影，或者你可以开启 receiveShadow
-					group.add(mesh);
+					// 位置：围绕核心随机分布
+					// 使用球面坐标分布可以让云看起来更圆润饱满
+					const theta = Math.random() * Math.PI * 2; // 水平角度
+					const phi = (Math.random() * 0.6 + 0.2) * Math.PI; // 垂直角度 (限制在赤道附近，避免顶部底部太尖)
+					// 半径：核心半径乘以一个系数，让卫星球半嵌入核心中
+					const radius = coreScale * (0.4 + Math.random() * 0.4);
+
+					// 将球面坐标转换为笛卡尔坐标
+					puff.position.setFromSphericalCoords(radius, phi, theta);
+
+					// 随机旋转每个小云团，增加无序感
+					puff.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+
+					puff.castShadow = false;
+					group.add(puff);
 				}
+
+				// C. 整体调整
+				// 随机拉伸一下整朵云，让它不要太圆
+				group.scale.x = 1 + Math.random() * 0.6; // 横向拉长
+				group.scale.y = 0.8 + Math.random() * 0.3; // 纵向压扁
+				// 随机初始旋转
+				group.rotation.z = (Math.random() - 0.5) * 0.4;
+
 				return group;
 			},
 
@@ -2504,21 +2573,69 @@
 
 		function createTrackSegment(zPos) {
 			const seg = new THREE.Group();
-			// 地面材质也换成 Standard
+
+			// 1. 地面 (保持不变)
 			const floorMat = new THREE.MeshStandardMaterial({
 				color: CONFIG.COLORS.ground,
 				roughness: 1.0,
 				metalness: 0.0
 			});
-
 			const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, CONFIG.TRACK_LENGTH), floorMat);
 			floor.rotation.x = -Math.PI / 2;
-			floor.receiveShadow = true; // 🔥 必须开启接收阴影
+			floor.receiveShadow = true;
 			seg.add(floor);
 
-			// ... 轨道部分代码不变 ...
-			// 但建议把轨道的材质也改成 StandardMaterial 以保持一致
-			// ...
+			// --- 轨道系统材质定义 ---
+
+			// A. 铁轨 (金属质感，稍微亮一点)
+			const railGeo = new THREE.BoxGeometry(0.2, 0.3, CONFIG.TRACK_LENGTH); // 高度0.3，凸出地面
+			const railMat = new THREE.MeshStandardMaterial({
+				color: 0x999999, // 浅灰色钢材
+				roughness: 0.4,
+				metalness: 0.8   // 强金属感
+			});
+
+			// B. 枕木 (深色木头质感)
+			// 宽度3.0 (横跨两轨)，高度0.15 (扁平)，深度0.6 (宽板)
+			const sleeperGeo = new THREE.BoxGeometry(3.2, 0.15, 0.8);
+			const sleeperMat = new THREE.MeshStandardMaterial({
+				color: 0x4e342e, // 深褐色
+				roughness: 0.9,  // 粗糙木头
+				metalness: 0.0
+			});
+
+			CONFIG.LANES.forEach(x => {
+				// --- 1. 铺设铁轨 (修正为完美对称) ---
+				// 之前是 -1.0 和 +1.6，看起来是歪的。现在改为距离中心 ±1.2
+				const railOffset = 1.2;
+
+				let r1 = new THREE.Mesh(railGeo, railMat);
+				r1.position.set(x - railOffset, 0.15, 0); // Y=0.15 确保底部贴地
+				r1.castShadow = true; // 铁轨投射细微阴影
+				r1.receiveShadow = true;
+				seg.add(r1);
+
+				let r2 = new THREE.Mesh(railGeo, railMat);
+				r2.position.set(x + railOffset, 0.15, 0);
+				r2.castShadow = true;
+				r2.receiveShadow = true;
+				seg.add(r2);
+
+				// --- 2. 铺设枕木 (关键循环) ---
+				// 每隔 4 米铺设一根枕木
+				const spacing = 4.0;
+
+				for (let z = -CONFIG.TRACK_LENGTH / 2; z < CONFIG.TRACK_LENGTH / 2; z += spacing) {
+					const sleeper = new THREE.Mesh(sleeperGeo, sleeperMat);
+
+					// 位置：X=车道中心, Y=0.05(比地面略高, 比铁轨低), Z=循环位置
+					sleeper.position.set(x, 0.08, z);
+					sleeper.receiveShadow = true; // 枕木接收铁轨的阴影
+
+					seg.add(sleeper);
+				}
+			});
+
 			seg.position.z = zPos;
 			scene.add(seg);
 			activeTracks.push(seg);
