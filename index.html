@@ -1370,7 +1370,9 @@
 				charTitle: "角色选择", charBack: "返回", owned: "已拥有", equip: "装备", equipped: "使用中", buy: "购买"
 			}
 		};
-		let currentLang = 'en';
+		
+		// 如果浏览器语言是 zh-CN 或 zh-TW 等，默认用 cn，否则用 en
+		let currentLang = navigator.language.startsWith('zh') ? 'cn' : 'en';
 
 		let scene, camera, renderer, clock;
 		let player;
