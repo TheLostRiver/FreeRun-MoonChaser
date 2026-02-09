@@ -925,6 +925,23 @@
 			COLORS: {
 				skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
 				coin: 0xFFD700, ground: 0x333344
+			},
+
+			// 新增：特殊金币配置
+			SPECIAL_COINS: {
+				gem: {
+					value: 50,
+					color: 0x00FFFF, // 青色
+					chance: 0.08,    // 出现概率 8% (替代原本的一组金币)
+					rotateSpeed: 2.0
+				},
+				star: {
+					value: 100,
+					color: 0xE74C3C, // 红色/紫色核心
+					ringColor: 0xFFD700, // 金色环
+					chance: 0.03,    // 出现概率 3%
+					rotateSpeed: 1.5
+				}
 			}
 		};
 
@@ -1385,6 +1402,67 @@
 			}
 		};
 
+		const CoinFactory = {
+			// 基础金币材质缓存
+			materials: {
+				gold: new THREE.MeshPhongMaterial({ color: 0xFFD700, shininess: 100, specular: 0xFFFFFF }),
+				gem: new THREE.MeshPhongMaterial({ color: 0x00FFFF, shininess: 150, emissive: 0x004444 }),
+				starCore: new THREE.MeshPhongMaterial({ color: 0xE74C3C, shininess: 100, emissive: 0x330000 }),
+				starRing: new THREE.MeshBasicMaterial({ color: 0xFFD700 })
+			},
+
+			// 创建普通金币 (圆柱体)
+			createNormal: function () {
+				const geo = new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16);
+				geo.rotateZ(Math.PI / 2);
+				const mesh = new THREE.Mesh(geo, this.materials.gold);
+				mesh.userData = { type: 'normal', value: 1, rotateSpeed: 0.1 };
+				return mesh;
+			},
+
+			// 创建蓝钻币 (八面体) - 价值 50
+			createGem: function () {
+				// 使用八面体模拟钻石
+				const geo = new THREE.OctahedronGeometry(0.45, 0);
+				const mesh = new THREE.Mesh(geo, this.materials.gem);
+
+				// 添加一个发光的内部线框，增加科技感
+				const wireGeo = new THREE.WireframeGeometry(geo);
+				const wireMat = new THREE.LineBasicMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5 });
+				const wireframe = new THREE.LineSegments(wireGeo, wireMat);
+				mesh.add(wireframe);
+
+				mesh.userData = { type: 'gem', value: CONFIG.SPECIAL_COINS.gem.value, rotateSpeed: CONFIG.SPECIAL_COINS.gem.rotateSpeed };
+				return mesh;
+			},
+
+			// 创建紫星币 (带环球体) - 价值 100
+			createStar: function () {
+				const group = new THREE.Group();
+
+				// 核心球体
+				const coreGeo = new THREE.IcosahedronGeometry(0.4, 1);
+				const core = new THREE.Mesh(coreGeo, this.materials.starCore);
+				group.add(core);
+
+				// 外部星环 (Torus)
+				const ringGeo = new THREE.TorusGeometry(0.6, 0.05, 8, 32);
+				ringGeo.rotateX(Math.PI / 2); //以此让环水平
+				const ring = new THREE.Mesh(ringGeo, this.materials.starRing);
+				group.add(ring);
+
+				// 标记 group 为可交互对象，并保存环的引用以便旋转
+				group.userData = {
+					type: 'star',
+					value: CONFIG.SPECIAL_COINS.star.value,
+					rotateSpeed: CONFIG.SPECIAL_COINS.star.rotateSpeed,
+					isGroup: true,
+					ring: ring
+				};
+				return group;
+			}
+		};
+
 		// ==========================================
 		//    核心替换函数：createPlayerModel
 		// ==========================================
@@ -1571,12 +1649,38 @@
 		}
 
 		function spawnCoins(x, z, height) {
-			if (Math.random() > 0.6) return;
+			if (Math.random() > 0.6) return; // 基础生成概率不变
+
+			const rand = Math.random();
+
+			// 3% 概率生成 紫星币 (价值100)
+			if (rand < CONFIG.SPECIAL_COINS.star.chance) {
+				const coin = CoinFactory.createStar();
+				// 特殊金币通常放得稍微高一点，或者居中
+				coin.position.set(x, height + 0.5, z + 3);
+				coin.userData.collected = false;
+				scene.add(coin);
+				activeCoins.push(coin);
+				return;
+			}
+
+			// 8% 概率生成 蓝钻币 (价值50)
+			if (rand < CONFIG.SPECIAL_COINS.star.chance + CONFIG.SPECIAL_COINS.gem.chance) {
+				const coin = CoinFactory.createGem();
+				coin.position.set(x, height + 0.5, z + 3);
+				coin.userData.collected = false;
+				scene.add(coin);
+				activeCoins.push(coin);
+				return;
+			}
+
+			// 剩下的概率生成 5个普通金币 (原有逻辑)
 			for (let i = 0; i < 5; i++) {
-				const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.1, 16), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.coin, shininess: 80 }));
-				coin.rotation.z = Math.PI / 2; coin.position.set(x, height, z + (i * 1.5));
-				coin.userData = { isCoin: true, collected: false };
-				scene.add(coin); activeCoins.push(coin);
+				const coin = CoinFactory.createNormal();
+				coin.position.set(x, height, z + (i * 1.5));
+				coin.userData.collected = false;
+				scene.add(coin);
+				activeCoins.push(coin);
 			}
 		}
 
@@ -1798,8 +1902,23 @@
 			for (let i = activeCoins.length - 1; i >= 0; i--) {
 				const coin = activeCoins[i];
 				if (coin.userData.collected) continue;
-				coin.rotation.y += 0.1;
-				if (pBox.intersectsBox(new THREE.Box3().setFromObject(coin))) collectCoin(coin);
+
+				// 特殊金币自转动画逻辑 (添加到这里，或者在 animate 主循环里单独写)
+				if (coin.userData.type === 'star') {
+					coin.rotation.y += 0.02; // 整体自转
+					coin.userData.ring.rotation.x += 0.05; // 环的独特旋转
+					coin.userData.ring.rotation.y += 0.05;
+				} else {
+					// 普通金币和钻石币的自转
+					coin.rotation.y += coin.userData.rotateSpeed || 0.1;
+				}
+
+				// 碰撞检测 (使用 Group 或 Mesh 的包围盒)
+				const coinBox = new THREE.Box3().setFromObject(coin);
+				// 稍微扩大一点判定范围，因为特殊金币比较大
+				if (coin.userData.type !== 'normal') coinBox.expandByScalar(0.2);
+
+				if (pBox.intersectsBox(coinBox)) collectCoin(coin);
 			}
 		}
 
@@ -1818,11 +1937,26 @@
 			if (coin.userData.collected) return;
 			coin.userData.collected = true;
 
-			const currentMultiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
-			coins += currentMultiplier;
+			// 获取金币价值
+			let value = coin.userData.value || 1;
 
-			scene.remove(coin); activeCoins.splice(activeCoins.indexOf(coin), 1);
-			AudioSys.playCoin();
+			// 如果是普通金币，应用速度倍率奖励；如果是特殊金币，直接给固定高额奖励
+			if (coin.userData.type === 'normal') {
+				const multiplier = 1 + Math.floor((speed - CONFIG.PLAYER_SPEED_BASE) / 5);
+				value = value * multiplier;
+				AudioSys.playCoin(); // 普通音效
+			} else {
+				// 特殊金币音效：频率更高，持续时间更长
+				AudioSys.playTone(2000, 'square', 0.2, 0.2);
+				setTimeout(() => AudioSys.playTone(3000, 'sine', 0.4, 0.2), 100);
+			}
+
+			coins += value;
+
+			// 可选：在这里添加一个浮动文字特效 "+50" (需要额外的DOM操作，暂时略过，UI会自动跳数字)
+
+			scene.remove(coin);
+			activeCoins.splice(activeCoins.indexOf(coin), 1);
 		}
 
 		function updateWorldGen() {
