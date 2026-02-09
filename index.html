@@ -748,11 +748,12 @@
 		}
 
 		/* =========================================
-			移动端适配 V6 (修复顶部按钮重叠)
+		移动端适配 V7 (全能版 - 修复弹窗溢出)
+		包含：按钮适配 + 顶部按钮修复 + 弹窗UI修复
 		========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* 1. 标题：保持完美 */
+			/* --- Part 1: 主界面基础适配 (保持 V6 的完美状态) --- */
 			.game-title {
 				font-size: 32px !important;
 				margin-top: 90px !important;
@@ -760,26 +761,21 @@
 				width: 100% !important;
 			}
 
-			/* 2. 主菜单按钮：保持胶囊形状 */
 			.play-btn-style,
 			.store-btn-style,
 			.char-btn-style,
 			.rank-btn-style {
 				box-sizing: border-box !important;
 				width: 220px !important;
-				/* 锁定宽度 */
 				min-width: 220px !important;
 				max-width: none !important;
 				height: auto !important;
-
 				padding: 12px 0 !important;
 				border-radius: 50px !important;
-
 				font-size: 16px !important;
 				font-weight: bold !important;
 				line-height: normal !important;
 				white-space: nowrap !important;
-
 				position: relative !important;
 				display: block !important;
 				margin: 0 auto 12px auto !important;
@@ -788,7 +784,6 @@
 				flex: none !important;
 			}
 
-			/* 3. 开始按钮：绿色大胶囊 */
 			.play-btn-style {
 				width: 240px !important;
 				min-width: 240px !important;
@@ -798,27 +793,20 @@
 				box-shadow: 0 5px 0 #006400 !important;
 			}
 
-			/* 4. 核心修复：顶部功能按钮 (语言 & 声音) */
 			.top-btn {
 				top: 20px !important;
-				/* 距离顶部 20px */
 				transform: scale(0.9) !important;
-				/* 缩放 0.9，稍微大一点点 */
 				transform-origin: top left !important;
-				/* 固定左上角缩放 */
 			}
 
 			#lang-btn {
 				left: 20px !important;
-				/* 左边留出 20px 边距 */
 			}
 
 			#sound-btn {
 				left: 120px !important;
-				/* 关键修改：从 80 改到 120！彻底拉开！ */
 			}
 
-			/* 5. 底部与 HUD */
 			#controls-hint {
 				width: 90% !important;
 				bottom: 20px !important;
@@ -839,6 +827,72 @@
 				top: 5px !important;
 				right: 5px !important;
 				transform: scale(0.65);
+			}
+
+			/* --- Part 2: 弹窗UI修复 (排行榜、商店、角色) --- */
+
+			/* 1. 限制所有弹窗容器的宽度 */
+			#store-overlay,
+			#char-overlay,
+			#rankings-overlay,
+			#game-over-screen {
+				width: 95% !important;
+				/* 强制宽度为屏幕的 95% */
+				max-width: 360px !important;
+				/* 稍微限制一下最大宽 */
+				left: 50% !important;
+				top: 50% !important;
+				transform: translate(-50%, -50%) !important;
+				/* 完美居中 */
+				padding: 15px !important;
+				/* 减小内边距 */
+				box-sizing: border-box !important;
+				/* 确保padding不撑大盒子 */
+			}
+
+			/* 2. 缩小弹窗标题 */
+			#store-overlay h2,
+			#char-overlay h2,
+			#rankings-overlay h2 {
+				font-size: 24px !important;
+				margin-bottom: 15px !important;
+			}
+
+			/* 3. 排行榜表格专用优化 */
+			table {
+				width: 100% !important;
+				font-size: 12px !important;
+				/* 关键：缩小表格字号 */
+			}
+
+			th,
+			td {
+				padding: 5px 2px !important;
+				/* 关键：减小单元格间距，挤一挤 */
+				text-align: center !important;
+			}
+
+			/* 4. 弹窗内的“关闭”按钮 */
+			#store-overlay button,
+			#char-overlay button,
+			#rankings-overlay button {
+				font-size: 16px !important;
+				padding: 8px 20px !important;
+				width: auto !important;
+				/* 让按钮自适应文字宽度 */
+				min-width: 100px !important;
+			}
+
+			/* 5. 商店/角色列表项的布局调整 */
+			.store-item,
+			.char-item {
+				width: 100% !important;
+				/* 让商品项占满一行 */
+				display: flex !important;
+				justify-content: space-between !important;
+				align-items: center !important;
+				margin-bottom: 8px !important;
+				padding: 8px !important;
 			}
 		}
 	</style>
