@@ -1992,7 +1992,7 @@
 					CloudSystem.update(delta, player.position.z);
 
 					// --- 更新特效粒子 ---
-           			 	VFX.update(delta);
+					VFX.update(delta);
 
 					const moveDist = speed * delta;
 					player.position.z -= moveDist;
@@ -2066,13 +2066,42 @@
 					if (magnetActive) {
 						magnetTimer -= delta;
 						document.getElementById('magnet-timer').innerText = magnetTimer.toFixed(1) + 's';
-						if (magnetTimer <= 0) { magnetActive = false; document.getElementById('magnet-status').classList.remove('active'); }
+						if (magnetTimer <= 0) {
+							magnetActive = false;
+							document.getElementById('magnet-status').classList.remove('active');
+						}
+
 						activeCoins.forEach(coin => {
-							if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) coin.userData.attracted = true;
+							// 1. 触发吸引：判定距离保持不变
+							if (coin.position.distanceTo(player.position) < CONFIG.MAGNET_RANGE && !coin.userData.collected) {
+								coin.userData.attracted = true;
+							}
+
+							// 2. 吸引过程：这是修改的核心
 							if (coin.userData.attracted) {
+								// 目标位置：玩家胸口高度 (y+1)
 								const target = player.position.clone().add(new THREE.Vector3(0, 1, 0));
-								coin.position.add(target.sub(coin.position).normalize().multiplyScalar(30 * delta));
-								if (coin.position.distanceTo(player.position) < 1.0) collectCoin(coin);
+
+								// --- 关键修改点 START ---
+								// 动态计算飞行速度：
+								// 基础速度 50 (保证低速时吸得快)
+								// 额外速度：玩家当前速度 * 2.5 (保证高速时，金币比玩家快得多，像导弹一样追上来)
+								const flySpeed = Math.max(50, speed * 2.5);
+
+								const direction = target.clone().sub(coin.position).normalize();
+								const moveStep = flySpeed * delta;
+
+								// 移动金币
+								coin.position.add(direction.multiplyScalar(moveStep));
+
+								// 判定收集：
+								// 距离小于 1.5 (稍微放宽判定范围)
+								// 或者：当前距离已经小于一步移动的距离 (防止因为速度太快一帧穿透过去)
+								const dist = coin.position.distanceTo(target);
+								if (dist < 1.5 || dist < moveStep) {
+									collectCoin(coin);
+								}
+								// --- 关键修改点 END ---
 							}
 						});
 					}
@@ -2080,7 +2109,7 @@
 					updateWorldGen();
 
 					// --- 在检测玩家碰撞之前，先检测火车碰撞 ---
-            				checkTrainInteractions();
+					checkTrainInteractions();
 
 					checkCollisions();
 					score = Math.floor(distance * 10) + (coins * 50); survivalTime += delta;
