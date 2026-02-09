@@ -748,90 +748,93 @@
 		}
 
 		/* =========================================
-			移动端适配 V4 (Mobile Final Fix)
-			目标：精致、宽大胶囊按钮、小字号
-       		========================================= */
+       移动端适配 V5 (核弹级修复)
+       目标：强制固定宽度，强制小字体，绝不妥协
+       ========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* 1. 标题调整 */
+			/* 1. 标题：保持现状 */
 			.game-title {
-				font-size: 36px !important;
-				margin-top: 90px !important;
-				/* 再往下挪一点 */
-				margin-bottom: 20px !important;
+				font-size: 32px !important;
+				margin-top: 85px !important;
+				margin-bottom: 25px !important;
 				width: 100% !important;
 			}
 
-			/* 2. 核心修复：所有主菜单按钮 (开始、商店、角色、排行) */
-			/* 我们把所有按钮通用的样式提取出来统一改 */
+			/* 2. 核心修复：所有主菜单按钮 */
 			.play-btn-style,
 			.store-btn-style,
 			.char-btn-style,
 			.rank-btn-style {
-				/* A. 强制重置定位 (关键！解决按钮变圆球的问题) */
-				position: relative !important;
-				transform: none !important;
-				left: auto !important;
-				top: auto !important;
+				/* A. 尺寸强制重置 (核弹区) */
+				box-sizing: border-box !important;
+				/* 确保内边距不撑大盒子 */
 
-				/* B. 尺寸与形状 */
-				display: block !important;
-				width: 70% !important;
-				/* 宽度 70%，适中 */
-				max-width: 280px !important;
-				/* 最大不超过 280px */
-				margin: 0 auto 15px auto !important;
-				/* 居中，且每个按钮间隔 15px */
+				width: 220px !important;
+				/* 不再用百分比，直接定死 220px 宽！ */
+				min-width: 220px !important;
+				/* 谁也别想把它压扁 */
+				max-width: none !important;
+				/* 解除最大宽度限制 */
+				height: auto !important;
+				/* 高度自适应 */
 
-				padding: 10px 0 !important;
-				/* 减小内边距，让按钮变扁一点 */
-				border-radius: 50px !important;
-				/* 保持胶囊圆角 */
-
-				/* C. 字体大幅缩小 */
-				font-size: 18px !important;
-				/* 从 28px 降到 18px，精致感 */
-				letter-spacing: 2px !important;
-				/* 增加字间距，显得更高级 */
-				white-space: nowrap !important;
-			}
-
-			/* 3. 特别微调：开始按钮 (绿色那个) */
-			/* 可以比其他按钮稍微大一丢丢，突出重点 */
-			.play-btn-style {
-				width: 80% !important;
-				/* 稍微宽一点 */
-				font-size: 22px !important;
-				/* 字号稍微大一点点 (22px) */
+				/* B. 内边距与形状 */
 				padding: 12px 0 !important;
-				margin-bottom: 25px !important;
-				/* 和下面按钮拉开距离 */
-				box-shadow: 0 4px 0 #008000 !important;
-				/* 阴影变薄 */
+				/* 垂直方向给足空间 */
+				border-radius: 50px !important;
+				/* 完美的胶囊圆角 */
+
+				/* C. 字体调整 (安全字号) */
+				font-size: 16px !important;
+				/* 降到 16px，绝对能放得下 */
+				font-weight: bold !important;
+				line-height: normal !important;
+				white-space: nowrap !important;
+				/* 禁止换行 */
+
+				/* D. 定位重置 (防止重叠) */
+				position: relative !important;
+				display: block !important;
+				margin: 0 auto 12px auto !important;
+				/* 居中，且增加 12px 间距 */
+				left: auto !important;
+				transform: none !important;
+				flex: none !important;
+				/* 防止被 Flex 布局压缩 */
 			}
 
-			/* 4. 顶部功能按钮 (语言、声音) */
+			/* 3. 开始按钮特别加强 (绿色) */
+			.play-btn-style {
+				width: 240px !important;
+				/* 开始按钮比别的再宽 20px */
+				min-width: 240px !important;
+				font-size: 20px !important;
+				/* 字号稍微突出一点 (20px) */
+				padding: 15px 0 !important;
+				margin-bottom: 20px !important;
+				box-shadow: 0 5px 0 #006400 !important;
+			}
+
+			/* 4. 顶部与底部控件微调 */
 			.top-btn {
-				top: 20px !important;
-				transform: scale(0.85);
-				/* 再小一点 */
+				top: 15px !important;
+				transform: scale(0.8);
 			}
 
 			#lang-btn {
-				left: 15px !important;
+				left: 10px !important;
 			}
 
 			#sound-btn {
-				left: 95px !important;
+				left: 80px !important;
 			}
 
-			/* 5. 底部操作提示 */
 			#controls-hint {
 				width: 90% !important;
 				bottom: 20px !important;
-				padding: 5px !important;
-				background: rgba(0, 0, 0, 0.3) !important;
-				/* 颜色淡一点 */
+				padding: 8px !important;
+				background: rgba(0, 0, 0, 0.5) !important;
 			}
 
 			#controls-hint .control-row {
@@ -840,15 +843,13 @@
 
 			.swipe-hint {
 				font-size: 14px !important;
-				/* 提示字号也改小 */
+				margin: 0 !important;
 			}
 
-			/* 6. 隐藏 HUD (分数栏) 的缩放 */
 			#hud-panel {
-				top: 10px !important;
-				right: 10px !important;
-				transform: scale(0.7);
-				transform-origin: top right;
+				top: 5px !important;
+				right: 5px !important;
+				transform: scale(0.65);
 			}
 		}
 	</style>
