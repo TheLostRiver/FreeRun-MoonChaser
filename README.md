@@ -12,6 +12,8 @@
 
 **Free Run: Moon Chaser** is a high-performance 3D endless runner built with WebGL (Three.js). Experience a dynamic day-night cycle, dodge speeding trains, and master the art of parkour. No download required—play instantly in your browser!
 
+### [ ▶️ START GAME / 开始游戏 ](https://moon.bolobolo.online/)
+
 ---
 
 ### ✨ 核心特色 (Key Features)
@@ -139,4 +141,3 @@ This is a project dedicated to exploring the limits of Web 3D. Every line of cod
 
 ---
 
-### [ ▶️ START GAME / 开始游戏 ](https://moon.bolobolo.online/)
