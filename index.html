@@ -3246,13 +3246,23 @@
 			}
 			document.getElementById('go-best').innerText = bestScore;
 
+			// =========================================
+			// 🔥🔥🔥 新增：智能填充名字 🔥🔥🔥
+			// =========================================
+			// 尝试从本地存储获取上次的名字，如果没有，就默认叫 "Runner"
+			let lastName = localStorage.getItem('moonChaser_last_name') || "Runner";
+
+			// 赋值给输入框 (注意是 .value 不是 .placeholder)
+			const nameInput = document.getElementById('new-name-input');
+			nameInput.value = lastName;
+
 			// 3. 显示界面
 			document.getElementById('game-over-screen').style.display = 'block';
 
 			// 4. 确保其他UI隐藏 (HUD等)
 			document.getElementById('hud-panel').style.display = 'none';
 
-			// 5. 播放结束音效 (如果有)
+			// 5. 播放结束音效
 			// AudioSystem.play('crash'); 
 		}
 
@@ -3556,6 +3566,9 @@
 			let playerName = document.getElementById('new-name-input').value.trim();
 			if (!playerName) playerName = "Runner"; // 默认名字
 
+			// 🔥🔥🔥 新增：记住这个名字，下次自动填 🔥🔥🔥
+			localStorage.setItem('moonChaser_last_name', playerName);
+
 			// 2. 保存到排行榜 (复用你现有的 Leaderboard 系统)
 			Leaderboard.save(playerName, score, survivalTime);
 
@@ -3571,6 +3584,9 @@
 			// 1. 同样保存分数
 			let playerName = document.getElementById('new-name-input').value.trim();
 			if (!playerName) playerName = "Runner";
+
+			// 🔥🔥🔥 新增：记住这个名字 🔥🔥🔥
+			localStorage.setItem('moonChaser_last_name', playerName);
 
 			Leaderboard.save(playerName, score, survivalTime);
 
