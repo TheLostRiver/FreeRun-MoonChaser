@@ -93,6 +93,13 @@
 			cursor: pointer;
 			pointer-events: auto;
 			box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+			font-family: 'Segoe UI', sans-serif !important;
+			/* 强制使用系统字体，防止艺术字体搞怪 */
+			font-size: 24px;
+			/* 稍微大一点 */
+			padding-top: 2px;
+			/* 微调垂直居中 */
+			line-height: 38px;
 		}
 
 		#pause-btn:hover {
@@ -198,6 +205,40 @@
 			font-weight: 900;
 			font-family: monospace;
 			font-size: 18px;
+		}
+
+		/* 新增：护盾的背景渐变 (青蓝色，区别于喷气背包的深蓝) */
+		#shield-status {
+			background: linear-gradient(90deg, #1abc9c, #16a085);
+			/* 默认隐藏，通过添加 .active 类显示 */
+			display: flex;
+			opacity: 0;
+			transition: opacity 0.3s;
+		}
+
+		/* 当护盾处于激活状态 (有盾 或 无敌中) 时显示 */
+		#shield-status.active {
+			opacity: 1;
+			transform: scale(1);
+		}
+
+		/* 无敌时间的闪烁动画 */
+		@keyframes shieldBlink {
+			0% {
+				opacity: 1;
+			}
+
+			50% {
+				opacity: 0.5;
+			}
+
+			100% {
+				opacity: 1;
+			}
+		}
+
+		.shield-flicker {
+			animation: shieldBlink 0.2s infinite;
 		}
 
 		#jetpack-status {
@@ -736,6 +777,11 @@
 				<div id="magnet-status" class="status-bar">
 					<div class="status-icon">🧲</div>
 					<div id="magnet-timer" class="status-timer">10.0s</div>
+				</div>
+
+				<div id="shield-status" class="status-bar">
+					<div class="status-icon">🛡️</div>
+					<div id="shield-text" class="status-timer">READY</div>
 				</div>
 			</div>
 		</div>
@@ -2536,6 +2582,7 @@
 		};
 
 		function updateHUD() {
+			// 1. 更新分数和金币 (原有逻辑)
 			document.getElementById('score-display').innerText = score.toString().padStart(6, '0');
 			document.getElementById('coin-display').innerText = coins;
 
@@ -2549,6 +2596,41 @@
 			const speedVal = (speed / CONFIG.PLAYER_SPEED_BASE).toFixed(1);
 			document.getElementById('speed-indicator').innerText = "SPEED: " + speedVal + "x";
 			if (document.getElementById('menu-coin-count')) document.getElementById('menu-coin-count').innerText = GameData.coins;
+
+			// --- 2. 新增：护盾 UI 逻辑 ---
+			const shieldBar = document.getElementById('shield-status');
+			const shieldText = document.getElementById('shield-text');
+			const scoreEl = document.getElementById('score-display'); // 用于控制分数颜色反馈
+
+			if (isInvincible) {
+				// 状态：无敌倒计时中
+				shieldBar.classList.add('active'); // 确保显示
+				shieldBar.classList.add('shield-flicker'); // UI本身也跟着闪烁，增加紧张感
+				shieldText.innerText = invincibleTimer.toFixed(1) + "s";
+
+				// 分数颜色变红/蓝闪烁 (可选)
+				scoreEl.style.color = '#00FFFF';
+				scoreEl.style.textShadow = '0 0 15px #00FFFF';
+
+			} else if (hasShield) {
+				// 状态：护盾就绪
+				shieldBar.classList.add('active');
+				shieldBar.classList.remove('shield-flicker'); // 停止闪烁
+				shieldText.innerText = "READY"; // 或者 "ACTIVE"
+
+				// 分数颜色：青色常亮
+				scoreEl.style.color = '#1abc9c';
+				scoreEl.style.textShadow = '0 0 5px #1abc9c';
+
+			} else {
+				// 状态：无护盾
+				shieldBar.classList.remove('active');
+				shieldBar.classList.remove('shield-flicker');
+
+				// 分数颜色：恢复白色
+				scoreEl.style.color = 'white';
+				scoreEl.style.textShadow = '3px 3px 0 #000';
+			}
 		}
 
 		function gameOver() {
