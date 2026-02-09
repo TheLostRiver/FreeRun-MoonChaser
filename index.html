@@ -748,93 +748,90 @@
 		}
 
 		/* =========================================
-       移动端按钮终极优化 V3 (Mobile Buttons Final)
-       请替换掉之前所有的 @media 代码
-       ========================================= */
+			移动端适配 V4 (Mobile Final Fix)
+			目标：精致、宽大胶囊按钮、小字号
+       		========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* --- 1. 标题优化 --- */
+			/* 1. 标题调整 */
 			.game-title {
 				font-size: 36px !important;
-				margin-top: 80px !important;
-				margin-bottom: 30px !important;
-				line-height: 1.2;
-				width: 90% !important;
+				margin-top: 90px !important;
+				/* 再往下挪一点 */
+				margin-bottom: 20px !important;
+				width: 100% !important;
 			}
 
-			/* --- 2. 核心修复：绿色开始大按钮 --- */
-			/* 目标：变成一个大气横向的胶囊按钮 */
-			.play-btn-style {
-				width: 85% !important;
-				/* 宽度撑开 */
-				max-width: 320px !important;
-				/* 限制最大宽 */
-
-				/* 关键：增加上下的内边距，让按钮变高、变饱满 */
-				padding: 18px 0 !important;
-
-				/* 关键：设置合理的圆角，形成胶囊形状，而不是正圆 */
-				border-radius: 50px !important;
-
-				font-size: 28px !important;
-				/* 加大字号 */
-				margin-bottom: 25px !important;
-				/* 增加底部间距 */
-				white-space: nowrap !important;
-				display: block !important;
-				margin-left: auto !important;
-				margin-right: auto !important;
-				box-shadow: 0 6px 0 #008000 !important;
-				/* 增强立体感 */
-			}
-
-			/* 点击效果也要同步修改圆角 */
-			.play-btn-style:active {
-				box-shadow: 0 2px 0 #008000 !important;
-				transform: translateY(4px);
-			}
-
-			/* --- 3. 菜单小按钮组 (商店、角色、排行) --- */
-			/* 目标：比开始按钮稍小一点的胶囊按钮 */
+			/* 2. 核心修复：所有主菜单按钮 (开始、商店、角色、排行) */
+			/* 我们把所有按钮通用的样式提取出来统一改 */
+			.play-btn-style,
 			.store-btn-style,
 			.char-btn-style,
 			.rank-btn-style {
-				width: 70% !important;
-				/* 比开始按钮稍微窄一点，体现层级 */
-				max-width: 260px !important;
+				/* A. 强制重置定位 (关键！解决按钮变圆球的问题) */
+				position: relative !important;
+				transform: none !important;
+				left: auto !important;
+				top: auto !important;
 
-				padding: 12px 0 !important;
-				/* 高度也稍微降低 */
-				border-radius: 40px !important;
-				/* 胶囊圆角 */
-
-				font-size: 18px !important;
-				/* 字号适中 */
-				margin-bottom: 12px !important;
-				white-space: nowrap !important;
+				/* B. 尺寸与形状 */
 				display: block !important;
-				margin-left: auto !important;
-				margin-right: auto !important;
+				width: 70% !important;
+				/* 宽度 70%，适中 */
+				max-width: 280px !important;
+				/* 最大不超过 280px */
+				margin: 0 auto 15px auto !important;
+				/* 居中，且每个按钮间隔 15px */
+
+				padding: 10px 0 !important;
+				/* 减小内边距，让按钮变扁一点 */
+				border-radius: 50px !important;
+				/* 保持胶囊圆角 */
+
+				/* C. 字体大幅缩小 */
+				font-size: 18px !important;
+				/* 从 28px 降到 18px，精致感 */
+				letter-spacing: 2px !important;
+				/* 增加字间距，显得更高级 */
+				white-space: nowrap !important;
 			}
 
-			/* --- 4. 其他元素的适配保持不变 --- */
+			/* 3. 特别微调：开始按钮 (绿色那个) */
+			/* 可以比其他按钮稍微大一丢丢，突出重点 */
+			.play-btn-style {
+				width: 80% !important;
+				/* 稍微宽一点 */
+				font-size: 22px !important;
+				/* 字号稍微大一点点 (22px) */
+				padding: 12px 0 !important;
+				margin-bottom: 25px !important;
+				/* 和下面按钮拉开距离 */
+				box-shadow: 0 4px 0 #008000 !important;
+				/* 阴影变薄 */
+			}
+
+			/* 4. 顶部功能按钮 (语言、声音) */
 			.top-btn {
-				top: 15px !important;
-				transform: scale(0.9);
+				top: 20px !important;
+				transform: scale(0.85);
+				/* 再小一点 */
 			}
 
 			#lang-btn {
-				left: 10px !important;
+				left: 15px !important;
 			}
 
 			#sound-btn {
-				left: 90px !important;
+				left: 95px !important;
 			}
 
+			/* 5. 底部操作提示 */
 			#controls-hint {
-				width: 95% !important;
-				padding: 10px 5px !important;
-				bottom: 15px !important;
+				width: 90% !important;
+				bottom: 20px !important;
+				padding: 5px !important;
+				background: rgba(0, 0, 0, 0.3) !important;
+				/* 颜色淡一点 */
 			}
 
 			#controls-hint .control-row {
@@ -842,14 +839,16 @@
 			}
 
 			.swipe-hint {
-				font-size: 15px !important;
-				margin: 0 !important;
+				font-size: 14px !important;
+				/* 提示字号也改小 */
 			}
 
+			/* 6. 隐藏 HUD (分数栏) 的缩放 */
 			#hud-panel {
-				top: 5px !important;
-				right: 5px !important;
+				top: 10px !important;
+				right: 10px !important;
 				transform: scale(0.7);
+				transform-origin: top right;
 			}
 		}
 	</style>
