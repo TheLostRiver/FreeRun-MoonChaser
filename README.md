@@ -100,6 +100,21 @@
 
 ---
 
+### ❓ 常见问题 (Troubleshooting)
+
+* **Q: 打开是黑屏怎么办？ (Black Screen?)**
+    * A: 请确保你使用的是现代浏览器，如 **Google Chrome**, **Microsoft Edge**, 或 **Firefox**。不要使用 IE 浏览器。
+    * *Ensure you are using a modern browser like Chrome, Edge, or Firefox. Do not use Internet Explorer.*
+
+* **Q: 为什么没有声音？ (No Sound?)**
+    * A: 浏览器通常禁止自动播放声音。请点击游戏画面上的 **"TAP TO PLAY"** 按钮，或者点击右上角的 喇叭 🔊 图标来开启声音。
+    * *Browsers block auto-playing audio. Click the **"TAP TO PLAY"** button or the speaker 🔊 icon to enable sound.*
+
+* **Q: 游戏进度会保存吗？ (Will progress be saved?)**
+    * A: 是的！即使离线运行，你的金币和角色解锁记录也会保存在浏览器的缓存中。但如果你清理了浏览器缓存，存档可能会丢失。
+    * *Yes! Your coins and unlocked characters are saved in your browser's local storage.*
+---
+
 ### 👨‍💻 开发者 (Developer)
 
 **Version**: v2.3.0 (Sci-Fi Visual Update)
