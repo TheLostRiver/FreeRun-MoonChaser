@@ -746,6 +746,101 @@
 		#game-over {
 			z-index: 300;
 		}
+
+		/* =========================================
+       移动端适配专用代码 (Mobile Responsive)
+       把这段加到 <style> 的最后面
+       ========================================= */
+		@media only screen and (max-width: 768px) {
+
+			/* 1. 标题适配：缩小字号，增加顶部留白，防止被左上角按钮遮挡 */
+			.game-title {
+				font-size: 32px !important;
+				/* 从 60px 缩小到 32px */
+				margin-top: 70px !important;
+				/* 让出顶部空间给功能按钮 */
+				margin-bottom: 20px !important;
+				line-height: 1.2;
+				width: 90%;
+				/* 防止标题太宽撑出屏幕 */
+				max-width: 100%;
+			}
+
+			/* 2. 顶部功能按钮：稍微缩小一点，靠边紧凑一点 */
+			.top-btn {
+				padding: 6px 12px !important;
+				font-size: 12px !important;
+				top: 15px !important;
+				border-width: 1px !important;
+			}
+
+			#lang-btn {
+				left: 15px !important;
+			}
+
+			#sound-btn {
+				left: 100px !important;
+				width: 36px !important;
+			}
+
+			/* 3. 主菜单金币：调整位置防止重叠 */
+			#main-menu-coins {
+				top: 15px !important;
+				right: 15px !important;
+				font-size: 20px !important;
+			}
+
+			/* 4. 菜单按钮组：整体缩小，减少间距 */
+			.play-btn-style {
+				font-size: 20px !important;
+				padding: 12px 50px !important;
+				margin-bottom: 12px !important;
+				width: 70%;
+				/* 限制宽度 */
+			}
+
+			.store-btn-style,
+			.char-btn-style,
+			.rank-btn-style {
+				font-size: 14px !important;
+				padding: 8px 30px !important;
+				margin-bottom: 8px !important;
+				width: 60%;
+			}
+
+			/* 5. 核心优化：操作说明框 */
+			#controls-hint {
+				padding: 10px 20px !important;
+				margin-top: 15px !important;
+				width: 80%;
+				background: rgba(10, 10, 30, 0.6) !important;
+				/* 稍微透明一点 */
+			}
+
+			/* 关键：在手机上直接隐藏键盘按键提示！手机玩家不需要看这个！ */
+			#controls-hint .control-row {
+				display: none !important;
+			}
+
+			/* 放大并高亮“滑动屏幕”提示，这才是手机玩家需要的 */
+			.swipe-hint {
+				font-size: 16px !important;
+				color: #00FFFF !important;
+				margin-top: 0 !important;
+				font-weight: bold;
+				display: flex;
+				justify-content: center;
+			}
+
+			/* 6. 游戏内 HUD (分数栏) 整体缩小 */
+			#hud-panel {
+				top: 10px !important;
+				right: 10px !important;
+				transform: scale(0.75);
+				/* 整体缩放 75% */
+				transform-origin: top right;
+			}
+		}
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
