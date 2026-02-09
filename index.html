@@ -1920,6 +1920,10 @@
 
 		// Environment references
 		let ambientLight, dirLight, sunMesh;
+
+		// 🔥🔥🔥 新增：存放科幻星球的数组 🔥🔥🔥
+		let sciFiElements = [];
+
 		let cycleTime = CONFIG.CYCLE_DURATION * CONFIG.START_TIME_OFFSET;
 
 		const activeTracks = [];
@@ -2517,6 +2521,82 @@
 			return wrapper;
 		}
 
+		// ==========================================
+		// 🔥🔥🔥 新增：科幻星球生成器 🔥🔥🔥
+		// ==========================================
+
+		// 1. 创建普通低多边形星球
+		function createPolyPlanet(radius, color, x, y, zOffset) {
+			const geo = new THREE.IcosahedronGeometry(radius, 1);
+			const mat = new THREE.MeshStandardMaterial({
+				color: color,
+				roughness: 0.9,
+				metalness: 0.1,
+				flatShading: true,
+				fog: false // 🔥 关键：关闭雾气影响，让它在远处也清晰可见
+			});
+			const mesh = new THREE.Mesh(geo, mat);
+
+			// 我们暂时不设置绝对位置，而是存下相对位置
+			mesh.userData.offset = { x: x, y: y, z: zOffset };
+
+			// 随机旋转
+			mesh.rotation.set(Math.random(), Math.random(), Math.random());
+
+			mesh.userData.rotSpeed = {
+				x: (Math.random() - 0.5) * 0.02,
+				y: (Math.random() - 0.5) * 0.05,
+				z: (Math.random() - 0.5) * 0.02
+			};
+
+			scene.add(mesh);
+			sciFiElements.push(mesh);
+			return mesh;
+		}
+
+		// 2. 创建带光环的星球 (土星风格)
+		function createRingedPlanet(radius, color, ringColor, x, y, zOffset) {
+			const group = new THREE.Group();
+
+			// 本体
+			const planetGeo = new THREE.IcosahedronGeometry(radius, 1);
+			const planetMat = new THREE.MeshStandardMaterial({
+				color: color, roughness: 0.9, metalness: 0.1, flatShading: true,
+				fog: false // 🔥 关闭雾气
+			});
+			const planet = new THREE.Mesh(planetGeo, planetMat);
+			group.add(planet);
+
+			// 光环
+			const ringGeo = new THREE.RingGeometry(radius * 1.4, radius * 2.5, 32);
+			const ringMat = new THREE.MeshStandardMaterial({
+				color: ringColor, roughness: 0.8, metalness: 0.2,
+				side: THREE.DoubleSide, transparent: true, opacity: 0.8,
+				fog: false // 🔥 关闭雾气
+			});
+			const ring = new THREE.Mesh(ringGeo, ringMat);
+			ring.rotation.x = Math.PI / 2;
+			ring.rotation.y = -0.3;
+			group.add(ring);
+
+			// 存储相对偏移量
+			group.userData.offset = { x: x, y: y, z: zOffset };
+
+			group.rotation.z = 0.4;
+			planet.userData.rotSpeed = { x: 0, y: 0.02, z: 0 }; // 只转本体
+			sciFiElements.push(planet); // 把本体推入数组用于旋转
+
+			// 注意：这里要把 group 也推入一个专门的列表或者在 animate 里特殊处理
+			// 为了简单，我们将 group 直接挂在 sciFiElements 的最后一个元素的 parent 属性上处理
+			// 或者直接在这里把 group 存入 sciFiElements 也可以，但 rotSpeed 逻辑要区分
+			// 简便改法：我们把 group 也加个标记
+			group.userData.isGroup = true;
+			sciFiElements.push(group);
+
+			scene.add(group);
+			return group;
+		}
+
 		// 全局变量增加一个 hemiLight 用于昼夜循环
 		let hemiLight;
 
@@ -2567,8 +2647,30 @@
 			sunMesh.position.set(-20, 60, -100);
 			scene.add(sunMesh);
 
+			// =========================================
+			// 🔥🔥🔥 新增：放置科幻星球 🔥🔥🔥
+			// =========================================
+
+			// 清空旧数据 (防止 restart 时重复添加)
+			sciFiElements.forEach(el => scene.remove(el.parent || el));
+
 			// 5. 初始化跑道
 			for (let i = 0; i < 4; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
+
+			// 清空旧数据
+			sciFiElements = []; // 直接清空数组即可，scene.remove在startGame里做了
+
+			// A. 巨大的土星 (放在右前方)
+			// 修改：Y从 100 降到 30，ZOffset 设为 -250
+			createRingedPlanet(15, 0x8e44ad, 0x00FFFF, 60, 30, -250);
+
+			// B. 红色星球 (放在左前方)
+			// 修改：Y从 150 降到 40，ZOffset 设为 -180 (稍微近一点)
+			createPolyPlanet(10, 0xe74c3c, -80, 40, -180);
+
+			// C. 蓝色小卫星 (低空)
+			// 修改：Y 设为 25
+			createPolyPlanet(6, 0x3498db, 30, 25, -300);
 		}
 
 		function createTrackSegment(zPos) {
@@ -2911,6 +3013,27 @@
 
 					// 2. 特效更新
 					VFX.update(delta);
+
+					// =========================================
+					// 🔥🔥🔥 新增：更新星球自转 🔥🔥🔥
+					// =========================================
+					sciFiElements.forEach(el => {
+						// 1. 跟随玩家移动 (制造天空盒效果)
+						if (el.userData.offset) {
+							el.position.x = el.userData.offset.x; // X 保持相对静止
+							el.position.y = el.userData.offset.y; // Y 保持相对静止
+
+							// 🔥 关键：Z轴锁定在玩家前方固定距离
+							el.position.z = player.position.z + el.userData.offset.z;
+						}
+
+						// 2. 自转逻辑 (只针对有 rotSpeed 的物体，通常是 Mesh)
+						if (el.userData.rotSpeed) {
+							el.rotation.x += el.userData.rotSpeed.x * delta;
+							el.rotation.y += el.userData.rotSpeed.y * delta;
+							el.rotation.z += el.userData.rotSpeed.z * delta;
+						}
+					});
 
 					// 3. 无敌闪烁逻辑
 					if (isInvincible) {
