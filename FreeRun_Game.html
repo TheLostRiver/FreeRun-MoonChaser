@@ -920,6 +920,7 @@
 			COST_JETPACK: 200,
 			INITIAL_COINS: 50000,
 			CYCLE_DURATION: 120,
+			START_TIME_OFFSET: 0.4, // 0.0=黑夜, 0.25=日出, 0.5=正午, 0.75=日落
 			MOVING_TRAIN_SPAWN_OFFSET: 180,
 			TRAIN_COOLDOWN: 3000,
 			COLORS: {
@@ -942,6 +943,16 @@
 					chance: 0.03,    // 出现概率 3%
 					rotateSpeed: 1.5
 				}
+			},
+
+			// 新增：云层配置
+			CLOUDS: {
+				count: 15,          // 云朵数量
+				minHeight: 25,      // 最低高度
+				maxHeight: 60,      // 最高高度
+				rangeX: 100,        // 左右分布范围
+				depth: 300,         // 前后分布深度
+				speed: 5            // 云朵飘动速度
 			}
 		};
 
@@ -1148,7 +1159,7 @@
 
 		// Environment references
 		let ambientLight, dirLight, sunMesh;
-		let cycleTime = 0;
+		let cycleTime = CONFIG.CYCLE_DURATION * CONFIG.START_TIME_OFFSET;
 
 		const activeTracks = [];
 		const activeObstacles = [];
@@ -1187,6 +1198,7 @@
 			createTrainMaterials();
 			createEnvironment();
 			createPlayerModel();
+			CloudSystem.init(scene);
 			setupInputs();
 			setupUI();
 			clock = new THREE.Clock();
@@ -1460,6 +1472,123 @@
 					ring: ring
 				};
 				return group;
+			}
+		};
+
+		// 云系统
+		const CloudSystem = {
+			clouds: [],
+			material: null, // 共享材质，用于统一变色
+
+			init: function (scene) {
+				// 使用 FlatShading 的材质，配合低多边形风格
+				this.material = new THREE.MeshPhongMaterial({
+					color: 0xffffff,
+					shininess: 0,
+					flatShading: true,
+					transparent: true,
+					opacity: 0.9
+				});
+
+				for (let i = 0; i < CONFIG.CLOUDS.count; i++) {
+					const cloud = this.createCloud();
+					// 随机分布
+					cloud.position.set(
+						(Math.random() - 0.5) * CONFIG.CLOUDS.rangeX,
+						CONFIG.CLOUDS.minHeight + Math.random() * (CONFIG.CLOUDS.maxHeight - CONFIG.CLOUDS.minHeight),
+						-Math.random() * CONFIG.CLOUDS.depth
+					);
+
+					// 给予每朵云独特的漂浮参数
+					cloud.userData = {
+						speedOffset: 1 + Math.random() * 0.5, // 速度微差
+						bobSpeed: 0.5 + Math.random() * 0.5,  // 上下浮动速度
+						bobAmp: 0.5 + Math.random(),          // 上下浮动幅度
+						rotSpeed: (Math.random() - 0.5) * 0.2 // 自转速度
+					};
+
+					scene.add(cloud);
+					this.clouds.push(cloud);
+				}
+			},
+
+			createCloud: function () {
+				const group = new THREE.Group();
+
+				// 每一朵云由 3-6 个“云泡”组成
+				const puffs = 3 + Math.floor(Math.random() * 4);
+				const geom = new THREE.IcosahedronGeometry(1, 0); // 低多边形球体
+
+				for (let i = 0; i < puffs; i++) {
+					const mesh = new THREE.Mesh(geom, this.material);
+
+					// 随机大小
+					const scale = 3 + Math.random() * 5;
+					mesh.scale.set(scale, scale, scale);
+
+					// 随机位置 (聚拢在一起)
+					mesh.position.set(
+						(Math.random() - 0.5) * 6,
+						(Math.random() - 0.5) * 3,
+						(Math.random() - 0.5) * 4
+					);
+
+					// 随机旋转
+					mesh.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, 0);
+
+					mesh.castShadow = false; // 云通常不投射生硬的阴影，或者你可以开启 receiveShadow
+					group.add(mesh);
+				}
+				return group;
+			},
+
+			update: function (delta, playerZ) {
+				const time = Date.now() * 0.001;
+
+				this.clouds.forEach(cloud => {
+					// 1. 移动逻辑：云朵向后飘，产生视差
+					// 这里的速度是 CONFIG.speed 加上一点随机，再减去玩家的速度(模拟相对运动)
+					// 但为了美观，通常我们让云慢速向后飘即可，不完全绑定玩家速度，否则看起来像背景板
+					cloud.position.z += CONFIG.CLOUDS.speed * cloud.userData.speedOffset * delta;
+
+					// 2. 循环利用：如果跑太远了，挪回最前面
+					if (cloud.position.z > playerZ + 50) {
+						cloud.position.z = playerZ - CONFIG.CLOUDS.depth;
+						cloud.position.x = (Math.random() - 0.5) * CONFIG.CLOUDS.rangeX;
+						cloud.position.y = CONFIG.CLOUDS.minHeight + Math.random() * (CONFIG.CLOUDS.maxHeight - CONFIG.CLOUDS.minHeight);
+					}
+
+					// 3. 动态效果：上下浮动
+					cloud.position.y += Math.sin(time * cloud.userData.bobSpeed) * 0.02;
+
+					// 4. 缓慢自转
+					cloud.rotation.y += cloud.userData.rotSpeed * delta;
+				});
+			},
+
+			// 昼夜循环颜色更新
+			updateColor: function (progress) {
+				let cloudColor;
+				// 简单的线性插值来决定云的颜色
+				if (progress < 0.2) { // 日出 (暗 -> 橙)
+					const t = progress / 0.2;
+					cloudColor = new THREE.Color(0x222244).lerp(new THREE.Color(0xFFAA88), t);
+				} else if (progress < 0.5) { // 白天 (橙 -> 白)
+					const t = (progress - 0.2) / 0.3;
+					cloudColor = new THREE.Color(0xFFAA88).lerp(new THREE.Color(0xFFFFFF), t);
+				} else if (progress < 0.7) { // 日落 (白 -> 紫红)
+					const t = (progress - 0.5) / 0.2;
+					cloudColor = new THREE.Color(0xFFFFFF).lerp(new THREE.Color(0xFF88AA), t);
+				} else { //哪怕 (紫红 -> 暗蓝)
+					const t = (progress - 0.7) / 0.3;
+					cloudColor = new THREE.Color(0xFF88AA).lerp(new THREE.Color(0x111122), t);
+				}
+
+				if (this.material) {
+					this.material.color.copy(cloudColor);
+					// 夜晚稍微透明一点
+					this.material.opacity = (progress > 0.8 || progress < 0.1) ? 0.6 : 0.9;
+				}
 			}
 		};
 
@@ -1762,6 +1891,9 @@
 				lightIntensity = 0.6 - t * 0.3; emissiveIntensity = 0.3 + t * 0.2; sunColor = 0xDDDDFF;
 			}
 
+			// 将计算出的 progress 传给云系统，让它自己变色
+    			CloudSystem.updateColor(progress);
+
 			scene.background = skyColor; scene.fog.color = skyColor;
 			ambientLight.intensity = lightIntensity * 0.6; dirLight.intensity = lightIntensity;
 
@@ -1779,6 +1911,9 @@
 			if (gameActive) {
 				if (!isPaused) {
 					updateDayNightCycle(delta);
+
+					// 传入 delta 和 玩家位置 (让云知道什么时候重置)
+            				CloudSystem.update(delta, player.position.z);
 
 					const moveDist = speed * delta;
 					player.position.z -= moveDist;
