@@ -1245,7 +1245,8 @@
 	<div id="game-container"></div>
 
 	<div id="ui-layer">
-		<button id="setting-btn" class="btn-3d top-btn" onclick="openSettings(event)" style="left: 170px;">⚙️</button>
+		<button id="setting-btn" class="btn-3d top-btn" onclick="openSettings(event)"
+			style="left: 170px;">⚙️</button>
 		<button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
 		<button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
 		<div id="pause-btn" class="hidden" onclick="togglePause(event)">⏸</div>
@@ -2592,19 +2593,24 @@
 			isInvincible = false;
 			invincibleTimer = 0;
 
-			// 确保玩家模型是可见的 (防止上一局结束时正好在闪烁)
+			// 确保玩家模型是可见的
 			if (player) player.visible = true;
 
+			// 清理场景物体
 			[activeObstacles, activeCoins, activeMagnets, activeJetpacks, activeDecorations].forEach(arr => {
 				arr.forEach(o => scene.remove(o)); arr.length = 0;
 			});
 			activeTracks.forEach(t => scene.remove(t)); activeTracks.length = 0;
+
+			// 重建跑道和初始建筑
 			for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
 			for (let i = 10; i < 150; i += 25) { spawnBuilding(-i); }
 
+			// 重置位置
 			player.position.set(0, 0, 0); player.rotation.set(0, 0, 0);
 			camera.position.set(0, 5, 8); camera.rotation.set(-0.3, 0, 0);
 
+			// 重置游戏参数
 			targetLane = 1; speed = CONFIG.PLAYER_SPEED_BASE;
 			score = 0; coins = 0; distance = 0; survivalTime = 0;
 			isJumping = false; isSliding = false; verticalVelocity = 0;
@@ -2615,6 +2621,7 @@
 			isPaused = false;
 			world.lastMovingTrainTime = 0;
 
+			// 重置状态栏UI
 			document.getElementById('magnet-status').classList.remove('active');
 			document.getElementById('jetpack-status').classList.remove('active');
 
@@ -2622,6 +2629,7 @@
 				player.userData.pack.visible = false;
 			}
 
+			// 自动使用道具逻辑
 			let autoUsed = false;
 			if (GameData.settings.autoJetpack && GameData.inventory.jetpack > 0) {
 				GameData.inventory.jetpack--; activateJetpack(); autoUsed = true;
@@ -2632,12 +2640,35 @@
 
 			world.lastSpawnZ = 0;
 			gameActive = true;
+
+			// 更新一次HUD数据
 			updateHUD();
 
+			// =========================================
+			// 🔥🔥🔥 核心修复区域 START 🔥🔥🔥
+			// =========================================
+
+			// 1. 隐藏主菜单和旧版UI
 			document.getElementById('main-menu').classList.add('hidden');
 			document.getElementById('game-over').classList.add('hidden');
-			document.getElementById('pause-btn').classList.remove('hidden');
-			document.getElementById('hud-panel').classList.remove('hidden');
+
+			// 2. 强制隐藏新版结算界面 (防止再次开始时没关掉)
+			document.getElementById('game-over-screen').style.display = 'none';
+
+			// 3. 显示暂停按钮 (清除 hidden 类，并强制设为 block)
+			const pauseBtn = document.getElementById('pause-btn');
+			pauseBtn.classList.remove('hidden');
+			pauseBtn.style.display = 'block';
+
+			// 4. 显示 HUD 面板 (清除 hidden 类，并强制设为 flex)
+			// 之前就是这里出问题了，style.display='none' 没被清除
+			const hudPanel = document.getElementById('hud-panel');
+			hudPanel.classList.remove('hidden');
+			hudPanel.style.display = 'flex';
+
+			// =========================================
+			// 🔥🔥🔥 核心修复区域 END 🔥🔥🔥
+			// =========================================
 		}
 		window.startGame = startGame;
 
