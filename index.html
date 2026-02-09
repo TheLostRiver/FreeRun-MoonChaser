@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-	<title>Free Run: Moon Chaser (V23)</title>
+	<title>Free Run: Moon Chaser</title>
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Titan+One&display=swap');
 		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@900&display=swap');
@@ -1660,7 +1660,7 @@
 				return mesh;
 			},
 
-			// 创建蓝钻币 (八面体) - 价值 50
+			// 创建蓝钻币 (八面体)
 			createGem: function () {
 				// 使用八面体模拟钻石
 				const geo = new THREE.OctahedronGeometry(0.45, 0);
@@ -1676,7 +1676,7 @@
 				return mesh;
 			},
 
-			// 创建紫星币 (带环球体) - 价值 100
+			// 创建紫星币 (带环球体)
 			createStar: function () {
 				const group = new THREE.Group();
 
@@ -2330,6 +2330,7 @@
 
 			// 遍历所有障碍物
 			for (let obs of activeObstacles) {
+
 				// === 修复的核心点 START ===
 				// 判定是否为火车：
 				// 1. 它是移动火车 (isMovingTrain)
