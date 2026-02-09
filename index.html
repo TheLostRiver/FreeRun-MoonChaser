@@ -748,97 +748,89 @@
 		}
 
 		/* =========================================
-       移动端适配专用代码 (Mobile Responsive)
-       把这段加到 <style> 的最后面
-       ========================================= */
+				移动端适配 V2
+		========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* 1. 标题适配：缩小字号，增加顶部留白，防止被左上角按钮遮挡 */
+			/* 1. 标题优化：大小适中，位置下移 */
 			.game-title {
-				font-size: 32px !important;
-				/* 从 60px 缩小到 32px */
-				margin-top: 70px !important;
-				/* 让出顶部空间给功能按钮 */
-				margin-bottom: 20px !important;
+				font-size: 36px !important;
+				margin-top: 80px !important;
+				/* 避开左上角按钮 */
+				margin-bottom: 30px !important;
 				line-height: 1.2;
-				width: 90%;
-				/* 防止标题太宽撑出屏幕 */
-				max-width: 100%;
+				width: 100%;
 			}
 
-			/* 2. 顶部功能按钮：稍微缩小一点，靠边紧凑一点 */
-			.top-btn {
-				padding: 6px 12px !important;
-				font-size: 12px !important;
-				top: 15px !important;
-				border-width: 1px !important;
-			}
-
-			#lang-btn {
-				left: 15px !important;
-			}
-
-			#sound-btn {
-				left: 100px !important;
-				width: 36px !important;
-			}
-
-			/* 3. 主菜单金币：调整位置防止重叠 */
-			#main-menu-coins {
-				top: 15px !important;
-				right: 15px !important;
-				font-size: 20px !important;
-			}
-
-			/* 4. 菜单按钮组：整体缩小，减少间距 */
+			/* 2. 核心修复：绿色开始按钮 */
 			.play-btn-style {
-				font-size: 20px !important;
-				padding: 12px 50px !important;
-				margin-bottom: 12px !important;
-				width: 70%;
-				/* 限制宽度 */
+				width: 80% !important;
+				/* 强制宽度占屏幕 80%，解决过窄问题 */
+				max-width: 300px !important;
+				/* 限制最大宽度 */
+				padding: 15px 0 !important;
+				/* 关键：去掉左右巨大的内边距！ */
+				font-size: 24px !important;
+				margin-bottom: 20px !important;
+				white-space: nowrap !important;
+				/* 关键：强制文字不换行！ */
+				display: block !important;
+				/* 确保独占一行 */
+				margin-left: auto !important;
+				/* 确保水平居中 */
+				margin-right: auto !important;
 			}
 
+			/* 3. 菜单小按钮组 (商店、角色、排行) */
 			.store-btn-style,
 			.char-btn-style,
 			.rank-btn-style {
-				font-size: 14px !important;
-				padding: 8px 30px !important;
-				margin-bottom: 8px !important;
-				width: 60%;
+				width: 60% !important;
+				max-width: 240px !important;
+				padding: 10px 0 !important;
+				/* 同样去掉左右内边距 */
+				font-size: 16px !important;
+				margin-bottom: 10px !important;
+				white-space: nowrap !important;
+				/* 强制不换行 */
+				display: block !important;
+				margin-left: auto !important;
+				margin-right: auto !important;
 			}
 
-			/* 5. 核心优化：操作说明框 */
+			/* 4. 顶部功能按钮微调 */
+			.top-btn {
+				top: 15px !important;
+				transform: scale(0.9);
+				/* 稍微缩小一点 */
+			}
+
+			#lang-btn {
+				left: 10px !important;
+			}
+
+			#sound-btn {
+				left: 90px !important;
+			}
+
+			/* 5. 底部操作提示框 */
 			#controls-hint {
-				padding: 10px 20px !important;
-				margin-top: 15px !important;
-				width: 80%;
-				background: rgba(10, 10, 30, 0.6) !important;
-				/* 稍微透明一点 */
+				width: 90% !important;
+				padding: 8px !important;
+				bottom: 20px !important;
+				/* 稍微往上提一点，防止被手机下巴遮挡 */
 			}
 
-			/* 关键：在手机上直接隐藏键盘按键提示！手机玩家不需要看这个！ */
+			/* 隐藏无用的键盘提示 */
 			#controls-hint .control-row {
 				display: none !important;
 			}
 
-			/* 放大并高亮“滑动屏幕”提示，这才是手机玩家需要的 */
+			/* 优化滑动提示文字 */
 			.swipe-hint {
 				font-size: 16px !important;
-				color: #00FFFF !important;
-				margin-top: 0 !important;
-				font-weight: bold;
-				display: flex;
-				justify-content: center;
-			}
-
-			/* 6. 游戏内 HUD (分数栏) 整体缩小 */
-			#hud-panel {
-				top: 10px !important;
-				right: 10px !important;
-				transform: scale(0.75);
-				/* 整体缩放 75% */
-				transform-origin: top right;
+				margin: 0 !important;
+				padding: 5px 0 !important;
 			}
 		}
 	</style>
