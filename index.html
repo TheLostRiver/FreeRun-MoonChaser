@@ -2529,20 +2529,19 @@
 		function createPolyPlanet(radius, color, x, y, zOffset) {
 			const geo = new THREE.IcosahedronGeometry(radius, 1);
 			const mat = new THREE.MeshStandardMaterial({
-				color: color,
-				roughness: 0.9,
-				metalness: 0.1,
-				flatShading: true,
-				fog: false // 🔥 关键：关闭雾气影响，让它在远处也清晰可见
+				color: color, roughness: 0.9, metalness: 0.1, flatShading: true,
+				fog: false
 			});
 			const mesh = new THREE.Mesh(geo, mat);
 
-			// 我们暂时不设置绝对位置，而是存下相对位置
+			// 🔥🔥🔥 核心修复：出生时立刻设置正确位置 🔥🔥🔥
+			// 假设玩家初始 Z=0
+			mesh.position.set(x, y, zOffset);
+
+			// 存储相对偏移量
 			mesh.userData.offset = { x: x, y: y, z: zOffset };
 
-			// 随机旋转
 			mesh.rotation.set(Math.random(), Math.random(), Math.random());
-
 			mesh.userData.rotSpeed = {
 				x: (Math.random() - 0.5) * 0.02,
 				y: (Math.random() - 0.5) * 0.05,
@@ -2562,7 +2561,7 @@
 			const planetGeo = new THREE.IcosahedronGeometry(radius, 1);
 			const planetMat = new THREE.MeshStandardMaterial({
 				color: color, roughness: 0.9, metalness: 0.1, flatShading: true,
-				fog: false // 🔥 关闭雾气
+				fog: false
 			});
 			const planet = new THREE.Mesh(planetGeo, planetMat);
 			group.add(planet);
@@ -2572,24 +2571,22 @@
 			const ringMat = new THREE.MeshStandardMaterial({
 				color: ringColor, roughness: 0.8, metalness: 0.2,
 				side: THREE.DoubleSide, transparent: true, opacity: 0.8,
-				fog: false // 🔥 关闭雾气
+				fog: false
 			});
 			const ring = new THREE.Mesh(ringGeo, ringMat);
 			ring.rotation.x = Math.PI / 2;
 			ring.rotation.y = -0.3;
 			group.add(ring);
 
+			// 🔥🔥🔥 核心修复：出生时立刻设置正确位置 🔥🔥🔥
+			group.position.set(x, y, zOffset);
+
 			// 存储相对偏移量
 			group.userData.offset = { x: x, y: y, z: zOffset };
 
 			group.rotation.z = 0.4;
-			planet.userData.rotSpeed = { x: 0, y: 0.02, z: 0 }; // 只转本体
-			sciFiElements.push(planet); // 把本体推入数组用于旋转
+			planet.userData.rotSpeed = { x: 0, y: 0.02, z: 0 };
 
-			// 注意：这里要把 group 也推入一个专门的列表或者在 animate 里特殊处理
-			// 为了简单，我们将 group 直接挂在 sciFiElements 的最后一个元素的 parent 属性上处理
-			// 或者直接在这里把 group 存入 sciFiElements 也可以，但 rotSpeed 逻辑要区分
-			// 简便改法：我们把 group 也加个标记
 			group.userData.isGroup = true;
 			sciFiElements.push(group);
 
