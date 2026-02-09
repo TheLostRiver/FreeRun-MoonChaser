@@ -717,7 +717,7 @@
 	<div id="ui-layer">
 		<button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
 		<button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
-		<div id="pause-btn" class="hidden" onclick="togglePause(event)">II</div>
+		<div id="pause-btn" class="hidden" onclick="togglePause(event)">⏸</div>
 
 		<div id="hud-panel" class="hidden">
 			<div id="score-display">000000</div>
@@ -923,6 +923,7 @@
 			START_TIME_OFFSET: 0.4, // 0.0=黑夜, 0.25=日出, 0.5=正午, 0.75=日落
 			MOVING_TRAIN_SPAWN_OFFSET: 180,
 			TRAIN_COOLDOWN: 3000,
+			INVINCIBLE_DURATION: 3.0, // 无敌时间 3秒
 			COLORS: {
 				skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
 				coin: 0xFFD700, ground: 0x333344
@@ -1232,6 +1233,10 @@
 		let isPaused = false;
 		let score = 0, coins = 0, distance = 0, survivalTime = 0;
 		let speed = CONFIG.PLAYER_SPEED_BASE;
+
+		let hasShield = false;      // 是否拥有护盾
+		let isInvincible = false;   // 是否处于无敌状态
+		let invincibleTimer = 0;    // 无敌倒计时
 
 		// Environment references
 		let ambientLight, dirLight, sunMesh;
@@ -1897,6 +1902,14 @@
 			AudioSys.init();
 			AudioSys.startBGM();
 
+			// 重置护盾状态
+			hasShield = true;       // 开局自带一次机会
+			isInvincible = false;
+			invincibleTimer = 0;
+
+			// 确保玩家模型是可见的 (防止上一局结束时正好在闪烁)
+			if (player) player.visible = true;
+
 			[activeObstacles, activeCoins, activeMagnets, activeJetpacks, activeDecorations].forEach(arr => {
 				arr.forEach(o => scene.remove(o)); arr.length = 0;
 			});
@@ -1993,6 +2006,24 @@
 
 					// --- 更新特效粒子 ---
 					VFX.update(delta);
+
+					// --- 新增：无敌时间逻辑 ---
+					if (isInvincible) {
+						invincibleTimer -= delta;
+
+						// 闪烁逻辑：利用时间戳，每 0.1 秒切换一次可见性
+						// 频率：100ms
+						const blinkSpeed = 100;
+						player.visible = Math.floor(Date.now() / blinkSpeed) % 2 === 0;
+
+						if (invincibleTimer <= 0) {
+							isInvincible = false;
+							player.visible = true; // 恢复常态
+						}
+					} else {
+						// 确保非无敌状态下人物始终可见
+						if (!player.visible) player.visible = true;
+					}
 
 					const moveDist = speed * delta;
 					player.position.z -= moveDist;
@@ -2127,15 +2158,46 @@
 			const pBox = new THREE.Box3().setFromObject(player);
 			pBox.min.x += 0.3; pBox.max.x -= 0.3; pBox.min.z += 0.2; pBox.max.z -= 0.2;
 
+			// --- 1. 障碍物检测 (核心修改) ---
 			if (!jetpackActive) {
-				for (let obs of activeObstacles) {
-					if (pBox.intersectsBox(new THREE.Box3().setFromObject(obs))) {
+				for (let i = activeObstacles.length - 1; i >= 0; i--) {
+					const obs = activeObstacles[i];
+					const obsBox = new THREE.Box3().setFromObject(obs);
+
+					if (pBox.intersectsBox(obsBox)) {
+						// 如果是滑铲且遇到高架路障，直接穿过 (原有逻辑)
 						if (isSliding && obs.userData.isHigh) continue;
-						gameOver(); return;
+
+						// 判断是否是 "重型障碍" (火车)
+						// 在 createTrainModel 中，我们设置了 userData.isObstacle = true
+						// 小栏杆没有这个标记 (或者你可以专门给火车加个 isHeavy 标记)
+						const isHeavy = obs.userData.isObstacle === true;
+
+						if (isHeavy) {
+							// 撞火车：神仙也救不了 (除非开挂/喷气背包)
+							gameOver();
+							return;
+						} else {
+							// 撞小障碍 (栏杆、路障)
+
+							if (isInvincible) {
+								// 处于无敌状态：直接撞碎障碍物
+								smashObstacle(obs, i);
+							} else if (hasShield) {
+								// 有护盾：消耗护盾，触发无敌
+								activateInvincibility();
+								smashObstacle(obs, i);
+							} else {
+								// 没护盾也没无敌：寄
+								gameOver();
+								return;
+							}
+						}
 					}
 				}
 			}
 
+			// --- 2. 道具拾取 (保持不变) ---
 			const checkItem = (list, action) => {
 				for (let i = list.length - 1; i >= 0; i--) {
 					const item = list[i]; item.rotation.y += 0.05;
@@ -2146,27 +2208,48 @@
 			checkItem(activeMagnets, activateMagnet);
 			checkItem(activeJetpacks, activateJetpack);
 
+			// --- 3. 金币拾取 (保持不变) ---
 			for (let i = activeCoins.length - 1; i >= 0; i--) {
 				const coin = activeCoins[i];
 				if (coin.userData.collected) continue;
 
-				// 特殊金币自转动画逻辑 (添加到这里，或者在 animate 主循环里单独写)
+				// 特殊金币自转逻辑...
 				if (coin.userData.type === 'star') {
-					coin.rotation.y += 0.02; // 整体自转
-					coin.userData.ring.rotation.x += 0.05; // 环的独特旋转
-					coin.userData.ring.rotation.y += 0.05;
+					coin.rotation.y += 0.02; coin.userData.ring.rotation.x += 0.05; coin.userData.ring.rotation.y += 0.05;
 				} else {
-					// 普通金币和钻石币的自转
 					coin.rotation.y += coin.userData.rotateSpeed || 0.1;
 				}
 
-				// 碰撞检测 (使用 Group 或 Mesh 的包围盒)
 				const coinBox = new THREE.Box3().setFromObject(coin);
-				// 稍微扩大一点判定范围，因为特殊金币比较大
 				if (coin.userData.type !== 'normal') coinBox.expandByScalar(0.2);
 
 				if (pBox.intersectsBox(coinBox)) collectCoin(coin);
 			}
+		}
+
+		// 辅助函数：触发无敌
+		function activateInvincibility() {
+			hasShield = false; // 消耗护盾
+			isInvincible = true;
+			invincibleTimer = CONFIG.INVINCIBLE_DURATION;
+
+			// 播放护盾破碎音效 (借用一下撞击音效，或者你可以加个更电子的声音)
+			AudioSys.playTone(800, 'sawtooth', 0.1, 0.2);
+			setTimeout(() => AudioSys.playTone(400, 'sawtooth', 0.3, 0.2), 100);
+
+			// 视觉提示：也可以在这里加个蓝色的爆炸圈
+			VFX.explode(player.position, 0x00FFFF, 1.5);
+		}
+
+		// 辅助函数：撞碎障碍物
+		function smashObstacle(obs, index) {
+			// 移除障碍物
+			scene.remove(obs);
+			activeObstacles.splice(index, 1);
+
+			// 播放特效
+			VFX.explode(obs.position, 0xE67E22, 1.0); // 橙色碎片
+			AudioSys.playSmash(false); // 轻撞击声
 		}
 
 		// 我们需要在每一帧检测行驶中的火车前方是否有东西
