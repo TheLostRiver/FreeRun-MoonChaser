@@ -748,12 +748,12 @@
 		}
 
 		/* =========================================
-		移动端适配 V7 (全能版 - 修复弹窗溢出)
-		包含：按钮适配 + 顶部按钮修复 + 弹窗UI修复
+		移动端适配 V8 (排行榜溢出终极修复)
+		核心改动：table-layout: fixed + 强制宽度
 		========================================= */
 		@media only screen and (max-width: 768px) {
 
-			/* --- Part 1: 主界面基础适配 (保持 V6 的完美状态) --- */
+			/* --- 1. 基础UI适配 (保持完美) --- */
 			.game-title {
 				font-size: 32px !important;
 				margin-top: 90px !important;
@@ -761,6 +761,7 @@
 				width: 100% !important;
 			}
 
+			/* 按钮样式重置 */
 			.play-btn-style,
 			.store-btn-style,
 			.char-btn-style,
@@ -793,6 +794,7 @@
 				box-shadow: 0 5px 0 #006400 !important;
 			}
 
+			/* 顶部按钮 */
 			.top-btn {
 				top: 20px !important;
 				transform: scale(0.9) !important;
@@ -807,6 +809,7 @@
 				left: 120px !important;
 			}
 
+			/* 底部提示 */
 			#controls-hint {
 				width: 90% !important;
 				bottom: 20px !important;
@@ -829,70 +832,96 @@
 				transform: scale(0.65);
 			}
 
-			/* --- Part 2: 弹窗UI修复 (排行榜、商店、角色) --- */
+			/* --- 2. 核心修复：排行榜/弹窗溢出 --- */
 
-			/* 1. 限制所有弹窗容器的宽度 */
+			/* A. 强制限制弹窗容器宽度 */
+			#rankings-overlay,
 			#store-overlay,
 			#char-overlay,
-			#rankings-overlay,
 			#game-over-screen {
-				width: 95% !important;
-				/* 强制宽度为屏幕的 95% */
-				max-width: 360px !important;
-				/* 稍微限制一下最大宽 */
+				box-sizing: border-box !important;
+				/* 边框算在宽度内 */
+				width: 90vw !important;
+				/* 强制宽度为视口宽度的 90% */
+				max-width: 340px !important;
+				/* 最大不超过 340px */
+				min-width: 0 !important;
+				/* 允许无限缩小 */
+
 				left: 50% !important;
 				top: 50% !important;
 				transform: translate(-50%, -50%) !important;
-				/* 完美居中 */
-				padding: 15px !important;
-				/* 减小内边距 */
-				box-sizing: border-box !important;
-				/* 确保padding不撑大盒子 */
+
+				padding: 15px 10px !important;
+				/* 左右内边距减小到 10px */
+				overflow: hidden !important;
+				/* 防止任何内容溢出边框 */
 			}
 
-			/* 2. 缩小弹窗标题 */
-			#store-overlay h2,
-			#char-overlay h2,
-			#rankings-overlay h2 {
-				font-size: 24px !important;
+			/* B. 表格强制布局 (Key Fix!) */
+			#rankings-overlay table {
+				width: 100% !important;
+
+				/* 关键代码：固定布局算法。 */
+				/* 这会让表格严格服从 width: 100%，绝对不会被内容撑开！ */
+				table-layout: fixed !important;
+
 				margin-bottom: 15px !important;
+				border-collapse: collapse !important;
 			}
 
-			/* 3. 排行榜表格专用优化 */
-			table {
-				width: 100% !important;
+			/* C. 单元格内容优化 */
+			#rankings-overlay th,
+			#rankings-overlay td {
 				font-size: 12px !important;
-				/* 关键：缩小表格字号 */
-			}
-
-			th,
-			td {
-				padding: 5px 2px !important;
-				/* 关键：减小单元格间距，挤一挤 */
+				/* 缩小字号 */
+				padding: 4px 2px !important;
+				/* 极小的内边距 */
 				text-align: center !important;
+
+				/* 防止文字换行导致高度崩坏，或者文字溢出 */
+				white-space: nowrap !important;
+				overflow: hidden !important;
+				text-overflow: ellipsis !important;
+				/* 超出显示省略号(...) */
 			}
 
-			/* 4. 弹窗内的“关闭”按钮 */
-			#store-overlay button,
-			#char-overlay button,
+			/* D. 针对排行榜各列微调宽度 (可选) */
+			/* 第一列(排名)给窄一点，给名字留空间 */
+			#rankings-overlay th:nth-child(1),
+			#rankings-overlay td:nth-child(1) {
+				width: 15% !important;
+			}
+
+			/* 第二列(名字) */
+			#rankings-overlay th:nth-child(2),
+			#rankings-overlay td:nth-child(2) {
+				width: 35% !important;
+			}
+
+			/* 第三列(分数) */
+			#rankings-overlay th:nth-child(3),
+			#rankings-overlay td:nth-child(3) {
+				width: 25% !important;
+			}
+
+			/* 第四列(时长) */
+			#rankings-overlay th:nth-child(4),
+			#rankings-overlay td:nth-child(4) {
+				width: 25% !important;
+			}
+
+			/* E. 弹窗标题与按钮 */
+			#rankings-overlay h2 {
+				font-size: 22px !important;
+				margin-top: 0 !important;
+				margin-bottom: 10px !important;
+			}
+
 			#rankings-overlay button {
+				width: 100px !important;
 				font-size: 16px !important;
-				padding: 8px 20px !important;
-				width: auto !important;
-				/* 让按钮自适应文字宽度 */
-				min-width: 100px !important;
-			}
-
-			/* 5. 商店/角色列表项的布局调整 */
-			.store-item,
-			.char-item {
-				width: 100% !important;
-				/* 让商品项占满一行 */
-				display: flex !important;
-				justify-content: space-between !important;
-				align-items: center !important;
-				margin-bottom: 8px !important;
-				padding: 8px !important;
+				padding: 8px 0 !important;
 			}
 		}
 	</style>
