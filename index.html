@@ -1370,7 +1370,7 @@
 				charTitle: "角色选择", charBack: "返回", owned: "已拥有", equip: "装备", equipped: "使用中", buy: "购买"
 			}
 		};
-		
+
 		// 如果浏览器语言是 zh-CN 或 zh-TW 等，默认用 cn，否则用 en
 		let currentLang = navigator.language.startsWith('zh') ? 'cn' : 'en';
 
@@ -2364,9 +2364,6 @@
 
 			// 更新全局变量
 			currentGroundY = newGroundY;
-
-			// 调试日志：如果你还是觉得没效果，取消下面这行的注释，按F12看控制台
-			// if(onTrain) console.log("On Train! GroundY:", currentGroundY);
 		}
 
 		function checkCollisions() {
