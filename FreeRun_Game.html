@@ -956,7 +956,7 @@
 			PLAYER_SPEED_BASE: 15,
 			PLAYER_SPEED_MAX: 50,
 			SPEED_ACCELERATION: 0.8,
-			JUMP_FORCE: 0.35,
+			JUMP_FORCE: 0.4,
 			GRAVITY: 0.015,
 			MAGNET_DURATION: 10,
 			JETPACK_DURATION: 8,
@@ -1002,6 +1002,9 @@
 				speed: 5            // 云朵飘动速度
 			}
 		};
+
+		let currentGroundY = 0; // 当前的地面高度 (0=地面, 4=车顶)
+		let onTrain = false;    // 玩家当前是否在火车上
 
 		// --- V23: Character Data ---
 		const CHARACTERS = {
@@ -2088,6 +2091,9 @@
 
 					let targetY = 5, targetZOffset = 8, targetRotX = -0.1;
 
+					// 1. 持续检测脚下是否有火车 (实时更新地面高度)
+					checkGroundStatus();
+
 					if (jetpackActive) {
 						jetpackTimer -= delta;
 						document.getElementById('jetpack-timer').innerText = jetpackTimer.toFixed(1) + 's';
@@ -2115,13 +2121,38 @@
 					} else {
 						player.userData.pack.visible = false;
 						player.rotation.x = 0; player.rotation.z = -(tx - player.position.x) * 0.15;
+
+						// --- 物理重力核心修改 START ---
 						if (isJumping) {
-							player.position.y += verticalVelocity; verticalVelocity -= CONFIG.GRAVITY;
-							if (player.position.y <= 0) { player.position.y = 0; isJumping = false; }
+							player.position.y += verticalVelocity;
+							verticalVelocity -= CONFIG.GRAVITY;
+
+							// 落地判定：现在的地面是动态的 currentGroundY
+							if (player.position.y <= currentGroundY) {
+								player.position.y = currentGroundY;
+								isJumping = false;
+								verticalVelocity = 0; // 重置速度
+
+								// 可选：落地微尘特效
+								// VFX.spawnDust(player.position); 
+							}
 						} else {
-							if (player.position.y > 0) player.position.y -= CONFIG.GRAVITY * 10;
-							if (player.position.y < 0) player.position.y = 0;
+							// 非跳跃状态 (跑动中)
+							if (player.position.y > currentGroundY) {
+								// 如果我们在空中 (比如跑出了火车边缘)，施加重力
+								player.position.y -= CONFIG.GRAVITY * 15; // 下落速度稍微快一点，手感更好
+
+								// 落到新地面
+								if (player.position.y < currentGroundY) {
+									player.position.y = currentGroundY;
+								}
+							} else if (player.position.y < currentGroundY) {
+								// 修正：如果被某种逻辑压得比地面还低，强制拉回来
+								player.position.y = currentGroundY;
+							}
 						}
+						// --- 物理重力核心修改 END ---
+
 						if (isSliding) {
 							slideTimer -= delta; player.scale.y = 0.5;
 							if (slideTimer <= 0) { isSliding = false; player.scale.y = 1; }
@@ -2200,41 +2231,128 @@
 			renderer.render(scene, camera);
 		}
 
-		function checkCollisions() {
-			const pBox = new THREE.Box3().setFromObject(player);
-			pBox.min.x += 0.3; pBox.max.x -= 0.3; pBox.min.z += 0.2; pBox.max.z -= 0.2;
+		function checkGroundStatus() {
+			// 默认地面是 0
+			let newGroundY = 0;
+			onTrain = false;
 
-			// --- 1. 障碍物检测 (核心修改) ---
+			// 获取玩家当前的包围盒 (稍微缩小一点，防止站在边缘空气上)
+			const pBox = new THREE.Box3().setFromObject(player);
+			const center = new THREE.Vector3();
+			pBox.getCenter(center);
+
+			// 只检测脚下的核心区域
+			const footCheckX = center.x;
+			const footCheckZ = center.z;
+
+			// 遍历所有障碍物，寻找脚下的火车
+			for (let obs of activeObstacles) {
+				// 必须是火车 (静止或移动)
+				// 注意：这里假设你的 createTrainModel 里设置了 userData.isObstacle = true
+				// 为了区分栏杆和火车，建议在 createTrainModel 里加个 userData.isPlatform = true
+				// 或者通过高度判断: 火车的高度通常 > 2
+
+				// 这里我们需要在 createTrainModel 里加个标记，或者直接判断几何体大小
+				// 简单起见，我们判断 obs.userData.isObstacle 且高度较高
+				const isTrain = obs.userData.isObstacle === true && obs.position.y > 1;
+
+				if (isTrain) {
+					const obsBox = new THREE.Box3().setFromObject(obs);
+
+					// 扩展一下判定范围，让上车稍微容易一点点
+					obsBox.expandByScalar(0.2);
+
+					// 核心判定：
+					// 1. 玩家在火车的 X/Z 平面范围内
+					// 2. 玩家目前的高度高于 (火车顶部 - 容差)
+					// 火车顶部大约是 4.0 (2.25 + 1.75)
+					const trainTopY = 4.0;
+
+					if (footCheckX >= obsBox.min.x && footCheckX <= obsBox.max.x &&
+						footCheckZ >= obsBox.min.z && footCheckZ <= obsBox.max.z) {
+
+						// 如果我们已经在车顶，或者正在跳跃且高度足够
+						if (player.position.y >= trainTopY - 0.5) {
+							newGroundY = trainTopY;
+							onTrain = true;
+							break; // 找到了一个支撑点，不用找了
+						}
+					}
+				}
+			}
+
+			currentGroundY = newGroundY;
+		}
+
+		function checkCollisions() {
+			// 获取玩家包围盒
+			const pBox = new THREE.Box3().setFromObject(player);
+			// 稍微缩小一点玩家的判定范围，避免蹭到空气墙
+			pBox.min.x += 0.3; pBox.max.x -= 0.3;
+			pBox.min.z += 0.2; pBox.max.z -= 0.2;
+
+			const playerBottomY = player.position.y;
+
+			// --- 1. 障碍物检测 ---
 			if (!jetpackActive) {
 				for (let i = activeObstacles.length - 1; i >= 0; i--) {
 					const obs = activeObstacles[i];
+
+					// 获取障碍物包围盒
 					const obsBox = new THREE.Box3().setFromObject(obs);
 
+					// 碰撞发生！
 					if (pBox.intersectsBox(obsBox)) {
-						// 如果是滑铲且遇到高架路障，直接穿过 (原有逻辑)
+
+						// 滑铲穿过高架路障
 						if (isSliding && obs.userData.isHigh) continue;
 
-						// 判断是否是 "重型障碍" (火车)
-						// 在 createTrainModel 中，我们设置了 userData.isObstacle = true
-						// 小栏杆没有这个标记 (或者你可以专门给火车加个 isHeavy 标记)
 						const isHeavy = obs.userData.isObstacle === true;
 
 						if (isHeavy) {
-							// 撞火车：神仙也救不了 (除非开挂/喷气背包)
+							// === 修复的核心逻辑 START ===
+
+							// 火车顶部高度 (Body Y=2.25, Height=3.5 -> Top=4.0)
+							// 我们给 4.0 一个稍微宽松的判定线
+							const trainTopY = 4.0;
+
+							// 判定豁免条件：
+							// 1. 必须是下落状态 (verticalVelocity <= 0) 或者是跑动状态 (0)
+							// 2. 玩家脚底高度 > 火车中心高度 (2.25)。
+							//    注意：这里不要用 trainTopY(4.0) 去比，因为你可能已经陷进去了一点点。
+							//    只要你在火车“腰部”以上，且正在往下落，我们就认为你是想踩上去。
+							const toleranceThreshold = 2.5;
+
+							if (verticalVelocity <= 0 && playerBottomY > toleranceThreshold) {
+								// 【判定为着陆！】
+
+								// 1. 强制修正位置：把玩家从火车身体里“提”出来，放到车顶
+								player.position.y = trainTopY;
+
+								// 2. 物理状态重置
+								verticalVelocity = 0;
+								isJumping = false;
+								onTrain = true;
+
+								// 3. 更新全局地面高度，防止下一帧掉下去
+								currentGroundY = trainTopY;
+
+								// 4. 跳过死亡判定
+								continue;
+							}
+							// === 修复的核心逻辑 END ===
+
+							// 如果不满足上述条件，那就是撞到了侧面或底部 -> 死亡
 							gameOver();
 							return;
 						} else {
-							// 撞小障碍 (栏杆、路障)
-
+							// 撞小障碍 (逻辑不变)
 							if (isInvincible) {
-								// 处于无敌状态：直接撞碎障碍物
 								smashObstacle(obs, i);
 							} else if (hasShield) {
-								// 有护盾：消耗护盾，触发无敌
 								activateInvincibility();
 								smashObstacle(obs, i);
 							} else {
-								// 没护盾也没无敌：寄
 								gameOver();
 								return;
 							}
@@ -2259,7 +2377,6 @@
 				const coin = activeCoins[i];
 				if (coin.userData.collected) continue;
 
-				// 特殊金币自转逻辑...
 				if (coin.userData.type === 'star') {
 					coin.rotation.y += 0.02; coin.userData.ring.rotation.x += 0.05; coin.userData.ring.rotation.y += 0.05;
 				} else {
