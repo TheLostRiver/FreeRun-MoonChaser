@@ -748,9 +748,155 @@
 		}
 
 		/* =========================================
-       移动端适配 V9 (修复排行榜溢出 - 钉死版)
-       核心原理：左右距离钉死，强制清零 min-width
+       新版结算界面样式 (Game Over UI)
        ========================================= */
+		#game-over-screen {
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+
+			/* 酷炫的深色玻璃拟态背景 */
+			background: linear-gradient(135deg, rgba(20, 20, 50, 0.95), rgba(10, 10, 30, 0.98));
+			border: 2px solid #FFD700;
+			/* 金色边框 */
+			box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.5);
+			border-radius: 20px;
+
+			width: 400px;
+			/* PC默认宽度 */
+			padding: 30px;
+			z-index: 2000;
+			/* 保证在最上层 */
+			text-align: center;
+			color: white;
+			font-family: "Arial", sans-serif;
+
+			/* 🔥🔥🔥 必须加上这一行！🔥🔥🔥 */
+    			pointer-events: auto !important;
+		}
+
+		/* 标题特效 */
+		.go-title {
+			font-size: 36px;
+			margin: 0 0 25px 0;
+			color: #FF4444;
+			/* 红色警告色 */
+			text-shadow: 2px 2px 0px #500000;
+			letter-spacing: 2px;
+			font-weight: 900;
+			text-transform: uppercase;
+		}
+
+		/* 数据行布局 */
+		.go-row {
+			display: flex;
+			justify-content: space-between;
+			/* 左右对齐 */
+			align-items: center;
+			margin-bottom: 12px;
+			font-size: 18px;
+		}
+
+		.go-label {
+			color: #aaaaaa;
+			/* 标签灰色 */
+			font-size: 14px;
+			font-weight: bold;
+		}
+
+		.go-value {
+			color: #ffffff;
+			font-size: 20px;
+			font-weight: bold;
+			font-family: monospace;
+			/* 等宽字体数字更好看 */
+		}
+
+		/* 分割线 */
+		.go-divider {
+			height: 1px;
+			background: rgba(255, 255, 255, 0.2);
+			margin: 15px 0;
+		}
+
+		/* 最佳纪录高亮 */
+		.go-row.highlight .go-value {
+			color: #FFD700;
+			/* 金色 */
+			text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+		}
+
+		/* 按钮组 */
+		.go-btn-group {
+			display: flex;
+			gap: 15px;
+			/* 按钮间距 */
+			margin-top: 25px;
+		}
+
+		.go-btn-group button {
+			flex: 1;
+			/* 两个按钮平分宽度 */
+			padding: 12px 0;
+			border: none;
+			border-radius: 50px;
+			font-size: 16px;
+			font-weight: bold;
+			cursor: pointer;
+			color: white;
+			transition: transform 0.1s;
+			box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+		}
+
+		/* 绿色重来按钮 */
+		#go-restart-btn {
+			background: linear-gradient(to bottom, #2ecc71, #27ae60);
+			box-shadow: 0 4px 0 #1e8449;
+		}
+
+		/* 蓝色菜单按钮 */
+		#go-menu-btn {
+			background: linear-gradient(to bottom, #3498db, #2980b9);
+			box-shadow: 0 4px 0 #1f618d;
+		}
+
+		.go-btn-group button:active {
+			transform: translateY(4px);
+			box-shadow: none !important;
+		}
+
+		/* 输入框容器 */
+		.go-input-container {
+			margin-top: 15px;
+			margin-bottom: 5px;
+		}
+
+		/* 酷炫的输入框样式 */
+		.go-input {
+			background: rgba(0, 0, 0, 0.3);
+			border: 2px solid rgba(255, 255, 255, 0.2);
+			border-radius: 10px;
+			padding: 10px;
+			color: #00FFFF;
+			font-family: 'Titan One', sans-serif;
+			/* 保持字体风格 */
+			font-size: 18px;
+			text-align: center;
+			width: 60%;
+			outline: none;
+			transition: border-color 0.3s;
+		}
+
+		.go-input:focus {
+			border-color: #00FFFF;
+			box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+		}
+
+		/* =========================================
+		移动端适配 V9 (修复排行榜溢出 - 钉死版)
+		核心原理：左右距离钉死，强制清零 min-width
+		========================================= */
 		@media only screen and (max-width: 768px) {
 
 			/* --- 1. 基础UI适配 (保持完美) --- */
@@ -911,6 +1057,53 @@
 				white-space: nowrap !important;
 				/* 防止标题换行撑开 */
 			}
+
+			/* 复用 V9 的左右钉死策略 */
+			#game-over-screen {
+				position: fixed !important;
+				left: 20px !important;
+				right: 20px !important;
+				width: auto !important;
+				/* 自动填满 */
+				min-width: 0 !important;
+				max-width: none !important;
+
+				top: 50% !important;
+				transform: translateY(-50%) !important;
+
+				padding: 20px !important;
+				box-sizing: border-box !important;
+			}
+
+			.go-title {
+				font-size: 28px !important;
+				/* 标题缩小 */
+				margin-bottom: 20px !important;
+			}
+
+			.go-row {
+				margin-bottom: 8px !important;
+			}
+
+			.go-label {
+				font-size: 12px !important;
+			}
+
+			.go-value {
+				font-size: 16px !important;
+			}
+
+			/* 按钮在手机上保持并排，但稍微高一点 */
+			.go-btn-group button {
+				padding: 12px 0 !important;
+				font-size: 14px !important;
+			}
+
+			.go-input {
+				width: 80% !important;
+				font-size: 16px !important;
+				padding: 8px !important;
+			}
 		}
 	</style>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -994,6 +1187,40 @@
 					onclick="togglePause(event)">RESUME</button>
 				<button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN
 					MENU</button>
+			</div>
+		</div>
+
+		<div id="game-over-screen" style="display: none;">
+			<h2 class="go-title">GAME OVER</h2>
+
+			<div class="go-stats-container">
+				<div class="go-row">
+					<span class="go-label">SCORE / 分数</span>
+					<span class="go-value" id="go-score">0</span>
+				</div>
+				<div class="go-row">
+					<span class="go-label">COINS / 金币</span>
+					<span class="go-value" id="go-coins">0</span>
+				</div>
+				<div class="go-row">
+					<span class="go-label">DISTANCE / 距离</span>
+					<span class="go-value" id="go-dist">0m</span>
+				</div>
+				<div class="go-divider"></div>
+				<div class="go-row highlight">
+					<span class="go-label">BEST / 最佳</span>
+					<span class="go-value" id="go-best">0</span>
+				</div>
+			</div>
+
+			<div class="go-input-container">
+				<input type="text" id="new-name-input" class="go-input" placeholder="Enter Name"
+					maxlength="8">
+			</div>
+
+			<div class="go-btn-group">
+				<button id="go-restart-btn" onclick="resetGame()">↻ AGAIN</button>
+				<button id="go-menu-btn" onclick="showMainMenu()">☰ MENU</button>
 			</div>
 		</div>
 
@@ -1418,7 +1645,7 @@
 			},
 			cn: {
 				title: "自由奔跑<br>逐月者",
-				play: "点击开始", crashed: "撞击!", score: "最终得分", tryAgain: "再来一次", mainMenu: "返回主菜单",
+				play: "点击开始", crashed: "游戏结束!", score: "最终得分", tryAgain: "再来一次", mainMenu: "返回主菜单",
 				controls: `
             <div class="control-row">
                 <div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
@@ -2544,6 +2771,31 @@
 			}
 		}
 
+		function showGameOverUI() {
+			// 1. 填充数据
+			document.getElementById('go-score').innerText = Math.floor(score); // 当前分数
+			document.getElementById('go-coins').innerText = coins;             // 当前金币
+			document.getElementById('go-dist').innerText = Math.floor(distance) + "m"; // 距离
+
+			// 2. 获取并显示最高分 (从本地存储读取)
+			let bestScore = localStorage.getItem('moonChaserBestScore') || 0;
+			// 如果当前分更高，更新它
+			if (score > bestScore) {
+				bestScore = Math.floor(score);
+				localStorage.setItem('moonChaserBestScore', bestScore);
+			}
+			document.getElementById('go-best').innerText = bestScore;
+
+			// 3. 显示界面
+			document.getElementById('game-over-screen').style.display = 'block';
+
+			// 4. 确保其他UI隐藏 (HUD等)
+			document.getElementById('hud-panel').style.display = 'none';
+
+			// 5. 播放结束音效 (如果有)
+			// AudioSystem.play('crash'); 
+		}
+
 		// 辅助函数：触发无敌
 		function activateInvincibility() {
 			hasShield = false; // 消耗护盾
@@ -2810,7 +3062,9 @@
 			isPaused = false;
 			AudioSys.stopBGM();
 
-			document.getElementById('game-over').classList.add('hidden');
+			// 隐藏所有可能的界面
+			document.getElementById('game-over').classList.add('hidden'); // 旧版
+			document.getElementById('game-over-screen').style.display = 'none'; // 【新增这一行：隐藏新版结算】
 			document.getElementById('pause-screen').classList.add('hidden');
 			document.getElementById('pause-btn').classList.add('hidden');
 			document.getElementById('hud-panel').classList.add('hidden');
@@ -2835,6 +3089,37 @@
 			} catch (e) { console.warn("Cleanup warning:", e); }
 		}
 		window.goHome = goHome;
+
+		// === 新增：保存分数并重开的逻辑 ===
+		function resetGame() {
+			// 1. 获取输入的名字，如果为空，则默认叫 "Runner"
+			let playerName = document.getElementById('new-name-input').value.trim();
+			if (!playerName) playerName = "Runner"; // 默认名字
+
+			// 2. 保存到排行榜 (复用你现有的 Leaderboard 系统)
+			Leaderboard.save(playerName, score, survivalTime);
+
+			// 3. 隐藏结算界面
+			document.getElementById('game-over-screen').style.display = 'none';
+
+			// 4. 开始新游戏
+			startGame();
+		}
+
+		// === 新增：保存分数并回主菜单的逻辑 ===
+		function showMainMenu() {
+			// 1. 同样保存分数
+			let playerName = document.getElementById('new-name-input').value.trim();
+			if (!playerName) playerName = "Runner";
+
+			Leaderboard.save(playerName, score, survivalTime);
+
+			// 2. 隐藏结算界面
+			document.getElementById('game-over-screen').style.display = 'none';
+
+			// 3. 调用原有的回主页函数
+			goHome();
+		}
 
 		const Leaderboard = {
 			data: [], sortField: 'score', sortDesc: true, load: function () { this.data = JSON.parse(localStorage.getItem('moonChaser_ranks') || '[]') }, save: function (n, s, t) { this.load(); this.data.push({ name: n || "Guest", score: s, time: t }); localStorage.setItem('moonChaser_ranks', JSON.stringify(this.data)) },
@@ -2909,9 +3194,12 @@
 			AudioSys.stopBGM();
 			AudioSys.playCrash();
 
+			// 显示结算界面
+			showGameOverUI();
+
 			document.getElementById('hud-panel').classList.add('hidden');
 			document.getElementById('pause-btn').classList.add('hidden');
-			document.getElementById('game-over').classList.remove('hidden');
+			//document.getElementById('game-over').classList.remove('hidden');
 			document.getElementById('final-score-val').innerText = score;
 			camera.lookAt(player.position);
 			GameData.addCoins(coins);
@@ -2946,6 +3234,9 @@
 			document.getElementById('pause-title').innerText = t.pauseTitle;
 			document.getElementById('resume-btn').innerText = t.resume;
 			document.getElementById('pause-home-btn').innerText = t.pauseMenu;
+
+			document.getElementById('new-name-input').placeholder = t.lbPlaceholder; // 复用原本的 "输入名字" 翻译
+			document.querySelector('.go-title').innerText = t.crashed; // 把 GAME OVER 改成中文
 
 			// V23: Char Screen Loc
 			document.getElementById('char-btn').innerText = t.charTitle;
