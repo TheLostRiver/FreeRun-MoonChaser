@@ -33,6 +33,66 @@
 			pointer-events: none;
 		}
 
+		/* --- Settings UI --- */
+		.setting-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			width: 100%;
+			margin-bottom: 25px;
+			color: white;
+			font-family: 'Titan One', sans-serif;
+		}
+
+		.setting-label {
+			width: 120px;
+			text-align: left;
+			color: #00FFFF;
+			font-size: 18px;
+		}
+
+		.setting-val {
+			width: 50px;
+			text-align: right;
+			font-family: monospace;
+			font-weight: bold;
+			color: #FFD700;
+		}
+
+		/* 自定义滑块轨道 */
+		.volume-slider {
+			-webkit-appearance: none;
+			width: 100%;
+			height: 10px;
+			border-radius: 5px;
+			background: #333;
+			outline: none;
+			border: 1px solid #555;
+		}
+
+		/* 滑块拖动头 (Thumb) */
+		.volume-slider::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			appearance: none;
+			width: 24px;
+			height: 24px;
+			border-radius: 50%;
+			background: #00FFFF;
+			cursor: pointer;
+			box-shadow: 0 0 10px #00FFFF;
+			margin-top: -8px;
+			/* 居中 */
+		}
+
+		/* Chrome/Safari 轨道 */
+		.volume-slider::-webkit-slider-runnable-track {
+			width: 100%;
+			height: 8px;
+			cursor: pointer;
+			background: #2c3e50;
+			border-radius: 5px;
+		}
+
 		.btn-3d {
 			pointer-events: auto;
 			border: none;
@@ -75,10 +135,19 @@
 			padding: 8px 0;
 		}
 
+		/* 设置按钮 (放在中间) */
+		#setting-btn {
+			left: 180px;
+			/* 从 170 改到 180，留出间隙 */
+			width: 40px;
+			text-align: center;
+			padding: 8px 0;
+		}
+
 		#pause-btn {
 			position: absolute;
 			top: 20px;
-			left: 180px;
+			left: 240px;
 			background: rgba(230, 126, 34, 0.8);
 			color: white;
 			border: 2px solid rgba(255, 255, 255, 0.5);
@@ -983,17 +1052,30 @@
 			}
 
 			.top-btn {
-				top: 20px !important;
+				top: 15px !important;
 				transform: scale(0.9) !important;
 				transform-origin: top left !important;
 			}
 
 			#lang-btn {
-				left: 20px !important;
+				left: 15px !important;
 			}
 
 			#sound-btn {
-				left: 120px !important;
+				left: 105px !important;
+			}
+
+			/* 3. 设置 (收紧) */
+			#setting-btn {
+				left: 155px !important;
+			}
+
+			/* 4. 暂停 (收紧) */
+			#pause-btn {
+				left: 205px !important;
+				transform: scale(0.9);
+				/* 暂停按钮也稍微缩小一点 */
+				top: 15px;
 			}
 
 			#controls-hint {
@@ -1044,7 +1126,7 @@
 				/* 只做垂直偏移 */
 
 				/* 🔥🔥🔥 新增：覆盖为移动端动画 🔥🔥🔥 */
-        			animation: popInMobile 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+				animation: popInMobile 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
 
 				/* D. 彻底清除“最小宽度”毒瘤 */
 				min-width: 0 !important;
@@ -1163,9 +1245,40 @@
 	<div id="game-container"></div>
 
 	<div id="ui-layer">
+		<button id="setting-btn" class="btn-3d top-btn" onclick="openSettings(event)" style="left: 170px;">⚙️</button>
 		<button id="lang-btn" class="btn-3d top-btn">CN / EN</button>
 		<button id="sound-btn" class="btn-3d top-btn" onclick="AudioSys.toggle()">🔊</button>
 		<div id="pause-btn" class="hidden" onclick="togglePause(event)">⏸</div>
+
+		<div id="settings-screen" class="menu-screen hidden" style="z-index: 600;">
+			<div class="store-container" style="max-width: 400px;">
+				<div class="store-header">
+					<div class="game-title"
+						style="font-size:28px; margin:0; animation:none; transform:none;">AUDIO
+						SETTINGS</div>
+				</div>
+
+				<div style="width: 100%; padding: 20px 0;">
+					<div class="setting-row">
+						<span class="setting-label">MUSIC (BGM)</span>
+						<input type="range" id="bgm-slider" class="volume-slider" min="0"
+							max="1" step="0.1" value="0.5"
+							oninput="AudioSys.setBGMVol(this.value)">
+						<span id="bgm-val" class="setting-val">50%</span>
+					</div>
+
+					<div class="setting-row">
+						<span class="setting-label">SOUND (SFX)</span>
+						<input type="range" id="sfx-slider" class="volume-slider" min="0"
+							max="1" step="0.1" value="0.3"
+							oninput="AudioSys.setSFXVol(this.value)">
+						<span id="sfx-val" class="setting-val">30%</span>
+					</div>
+				</div>
+
+				<button class="btn-3d lb-close-btn" onclick="closeSettings(event)">CLOSE</button>
+			</div>
+		</div>
 
 		<div id="hud-panel" class="hidden">
 			<div id="score-display">000000</div>
@@ -1459,92 +1572,141 @@
 		const AudioSys = {
 			ctx: null,
 			muted: false,
-			bgmOscillators: [],
+			bgmNode: null, // BGM 总线
+			sfxNode: null, // 音效 总线
+			bgmVolume: 0.8, // 默认背景音乐大一点 (0.0 - 1.0)
+			sfxVolume: 0.2, // 默认音效小一点
 			isPlayingBGM: false,
+			bgmTimer: null,
 
 			init: function () {
 				if (!this.ctx) {
 					const AudioContext = window.AudioContext || window.webkitAudioContext;
 					this.ctx = new AudioContext();
+
+					// 1. 创建 BGM 音量控制节点
+					this.bgmNode = this.ctx.createGain();
+					this.bgmNode.gain.value = this.bgmVolume;
+					this.bgmNode.connect(this.ctx.destination);
+
+					// 2. 创建 SFX 音量控制节点
+					this.sfxNode = this.ctx.createGain();
+					this.sfxNode.gain.value = this.sfxVolume;
+					this.sfxNode.connect(this.ctx.destination);
+
+					// 初始化 UI 滑块的值
+					this.updateSliderUI();
 				}
 				if (this.ctx.state === 'suspended') this.ctx.resume();
+			},
+
+			// 更新 UI 数字显示
+			updateSliderUI: function () {
+				const bgmSlider = document.getElementById('bgm-slider');
+				const sfxSlider = document.getElementById('sfx-slider');
+				if (bgmSlider) { bgmSlider.value = this.bgmVolume; document.getElementById('bgm-val').innerText = Math.round(this.bgmVolume * 100) + "%"; }
+				if (sfxSlider) { sfxSlider.value = this.sfxVolume; document.getElementById('sfx-val').innerText = Math.round(this.sfxVolume * 100) + "%"; }
+			},
+
+			setBGMVol: function (val) {
+				this.bgmVolume = parseFloat(val);
+				if (this.bgmNode) this.bgmNode.gain.value = this.muted ? 0 : this.bgmVolume;
+				document.getElementById('bgm-val').innerText = Math.round(this.bgmVolume * 100) + "%";
+			},
+
+			setSFXVol: function (val) {
+				this.sfxVolume = parseFloat(val);
+				if (this.sfxNode) this.sfxNode.gain.value = this.muted ? 0 : this.sfxVolume;
+				document.getElementById('sfx-val').innerText = Math.round(this.sfxVolume * 100) + "%";
+				// 播放一个测试音效
+				if (!this.muted && val > 0) this.playTone(800, 'sine', 0.1, 0.5);
 			},
 
 			toggle: function () {
 				this.muted = !this.muted;
 				document.getElementById('sound-btn').innerText = this.muted ? "🔇" : "🔊";
-				if (this.muted) this.stopBGM();
-				else if (gameActive && !isPaused) this.startBGM();
+
+				// 静音时将总线音量设为0，取消静音恢复设定值
+				if (this.bgmNode) this.bgmNode.gain.value = this.muted ? 0 : this.bgmVolume;
+				if (this.sfxNode) this.sfxNode.gain.value = this.muted ? 0 : this.sfxVolume;
+
+				if (!this.muted && gameActive && !isPaused) this.startBGM();
 			},
 
-			playTone: function (freq, type, duration, vol) {
-				if (this.muted || !this.ctx) return;
+			// 播放音效 (连接到 sfxNode)
+			playTone: function (freq, type, duration, relativeVol = 1.0) {
+				if (!this.ctx) return;
 				const osc = this.ctx.createOscillator();
 				const gain = this.ctx.createGain();
 				osc.type = type;
 				osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-				gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+
+				// 注意：这里的 relativeVol 是相对于 sfxNode 的比例
+				gain.gain.setValueAtTime(relativeVol, this.ctx.currentTime);
 				gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+
 				osc.connect(gain);
-				gain.connect(this.ctx.destination);
+				gain.connect(this.sfxNode); // 关键：连到 SFX 总线，而不是 destination
+
 				osc.start();
 				osc.stop(this.ctx.currentTime + duration);
 			},
 
 			playCoin: function () {
-				if (this.muted) return;
-				this.playTone(1200, 'sine', 0.1, 0.1);
-				setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.1), 50);
+				// 金币声音稍微大一点点
+				this.playTone(1200, 'sine', 0.1, 0.6);
+				setTimeout(() => this.playTone(1800, 'sine', 0.2, 0.4), 50);
 			},
 
 			playPowerup: function () {
-				if (this.muted || !this.ctx) return;
+				if (!this.ctx) return;
 				const osc = this.ctx.createOscillator();
 				const gain = this.ctx.createGain();
 				osc.type = 'sawtooth';
 				osc.frequency.setValueAtTime(200, this.ctx.currentTime);
 				osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.5);
-				gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+				gain.gain.setValueAtTime(0.3, this.ctx.currentTime); // 降低一点基础增益
 				gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
-				osc.connect(gain); gain.connect(this.ctx.destination);
+
+				osc.connect(gain);
+				gain.connect(this.sfxNode); // 连到 SFX 总线
+
 				osc.start(); osc.stop(this.ctx.currentTime + 0.5);
 			},
 
 			playCrash: function () {
-				if (this.muted || !this.ctx) return;
-				const bufferSize = this.ctx.sampleRate * 0.5; // 0.5 sec noise
+				if (!this.ctx) return;
+				const bufferSize = this.ctx.sampleRate * 0.5;
 				const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
 				const data = buffer.getChannelData(0);
 				for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
 				const noise = this.ctx.createBufferSource();
 				noise.buffer = buffer;
 				const gain = this.ctx.createGain();
-				gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+				gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
 				gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
-				noise.connect(gain); gain.connect(this.ctx.destination);
+
+				noise.connect(gain);
+				gain.connect(this.sfxNode); // 连到 SFX 总线
+
 				noise.start();
 			},
 
-			// 处理 撞击声和 破碎声
 			playSmash: function (isBig) {
-				if (this.muted || !this.ctx) return;
+				if (!this.ctx) return;
 				const osc = this.ctx.createOscillator();
 				const gain = this.ctx.createGain();
-
-				// 大撞击（撞火车）用低频锯齿波，小撞击（撞栏杆）用方波
 				osc.type = isBig ? 'sawtooth' : 'square';
-
-				// 频率快速下降模拟撞击
 				osc.frequency.setValueAtTime(isBig ? 100 : 300, this.ctx.currentTime);
 				osc.frequency.exponentialRampToValueAtTime(10, this.ctx.currentTime + 0.15);
 
-				// 音量控制：不能太吵
-				const vol = isBig ? 0.3 : 0.15;
+				// 基础音量调小
+				const vol = isBig ? 0.6 : 0.3;
 				gain.gain.setValueAtTime(vol, this.ctx.currentTime);
 				gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
 
 				osc.connect(gain);
-				gain.connect(this.ctx.destination);
+				gain.connect(this.sfxNode); // 连到 SFX 总线
 
 				osc.start();
 				osc.stop(this.ctx.currentTime + 0.2);
@@ -1553,20 +1715,33 @@
 			startBGM: function () {
 				if (this.muted || !this.ctx || this.isPlayingBGM) return;
 				this.isPlayingBGM = true;
+
+				// 确保音量设置正确
+				if (this.bgmNode) this.bgmNode.gain.value = this.bgmVolume;
+
 				this.bgmTimer = setInterval(() => {
 					if (!this.isPlayingBGM) return;
 					const t = this.ctx.currentTime;
+					// BGM 频率稍微丰富一点
 					const bassFreq = [55, 55, 55, 55, 65, 65, 49, 49][Math.floor(Date.now() / 250) % 8];
+
 					const osc = this.ctx.createOscillator();
 					const gain = this.ctx.createGain();
 					osc.type = 'sawtooth';
 					osc.frequency.setValueAtTime(bassFreq, t);
+
 					const filter = this.ctx.createBiquadFilter();
 					filter.type = 'lowpass';
-					filter.frequency.setValueAtTime(400, t);
-					gain.gain.setValueAtTime(0.1, t);
+					filter.frequency.setValueAtTime(400, t); // 稍微闷一点，不要太刺耳
+
+					// BGM 基础增益设为 0.2 (配合 Master BGM Volume 0.6 效果不错)
+					gain.gain.setValueAtTime(0.2, t);
 					gain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-					osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+
+					osc.connect(filter);
+					filter.connect(gain);
+					gain.connect(this.bgmNode); // 关键：连到 BGM 总线
+
 					osc.start(t); osc.stop(t + 0.2);
 				}, 250);
 			},
@@ -1577,6 +1752,23 @@
 			}
 		};
 		window.AudioSys = AudioSys;
+
+		// --- 设置界面控制函数 ---
+		function openSettings(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			// 初始化音频上下文(如果是第一次点击)
+			AudioSys.init();
+			document.getElementById('settings-screen').classList.remove('hidden');
+			// 如果在游戏中，自动暂停
+			if (gameActive && !isPaused) togglePause();
+		}
+		window.openSettings = openSettings;
+
+		function closeSettings(e) {
+			if (e && e.stopPropagation) e.stopPropagation();
+			document.getElementById('settings-screen').classList.add('hidden');
+		}
+		window.closeSettings = closeSettings;
 
 		// 特效系统 处理撞擊時產生的 “粉碎”效果
 		const VFX = {
