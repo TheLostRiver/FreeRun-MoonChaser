@@ -1522,41 +1522,35 @@
 			COST_JETPACK: 200,
 			INITIAL_COINS: 50000,
 			CYCLE_DURATION: 120,
-			START_TIME_OFFSET: 0.5, // 0.0=黑夜, 0.25=日出, 0.5=正午, 0.75=日落
+			START_TIME_OFFSET: 0.4, // 0.4 接近正午，保证开局是亮天
 			MOVING_TRAIN_SPAWN_OFFSET: 180,
 			TRAIN_COOLDOWN: 3000,
-			INVINCIBLE_DURATION: 3.0, // 无敌时间 3秒
+			INVINCIBLE_DURATION: 3.0,
+
+			// === 视觉翻新配置 ===
 			COLORS: {
-				skyNight: 0x050520, skySunrise: 0xFF8C00, skyDay: 0x87CEEB, skySunset: 0x800080,
-				coin: 0xFFD700, ground: 0x333344
+				// 天空颜色改为清新的渐变蓝
+				skyNight: 0x0b1026,
+				skySunrise: 0xff9a76,
+				skyDay: 0x4faaf0,  // 湛蓝色 (参考图风格)
+				skySunset: 0xfd79a8,
+
+				coin: 0xFFD700,
+				// 地面改为浅灰色，反衬阴影
+				ground: 0xeaeaea
 			},
 
-			// 新增：特殊金币配置
+			// 雾气设置：推远，不要糊在脸上
+			FOG: {
+				near: 60,  // 从 60米处才开始有雾 (原来是20)
+				far: 250   // 到 250米处完全看不见 (原来是120)
+			},
+
 			SPECIAL_COINS: {
-				gem: {
-					value: 50,
-					color: 0x00FFFF, // 青色
-					chance: 0.08,    // 出现概率 8% (替代原本的一组金币)
-					rotateSpeed: 2.0
-				},
-				star: {
-					value: 100,
-					color: 0xE74C3C, // 红色/紫色核心
-					ringColor: 0xFFD700, // 金色环
-					chance: 0.03,    // 出现概率 3%
-					rotateSpeed: 1.5
-				}
+				gem: { value: 50, color: 0x00FFFF, chance: 0.08, rotateSpeed: 2.0 },
+				star: { value: 100, color: 0xE74C3C, ringColor: 0xFFD700, chance: 0.03, rotateSpeed: 1.5 }
 			},
-
-			// 新增：云层配置
-			CLOUDS: {
-				count: 15,          // 云朵数量
-				minHeight: 25,      // 最低高度
-				maxHeight: 60,      // 最高高度
-				rangeX: 100,        // 左右分布范围
-				depth: 300,         // 前后分布深度
-				speed: 5            // 云朵飘动速度
-			}
+			CLOUDS: { count: 15, minHeight: 35, maxHeight: 70, rangeX: 120, depth: 300, speed: 3 }
 		};
 
 		let currentGroundY = 0; // 当前的地面高度 (0=地面, 4=车顶)
@@ -1950,8 +1944,9 @@
 			document.getElementById('loading').style.display = 'none';
 			GameData.load();
 			scene = new THREE.Scene();
-			scene.background = new THREE.Color(CONFIG.COLORS.skyNight);
-			scene.fog = new THREE.Fog(CONFIG.COLORS.skyNight, 20, 120);
+			scene.background = new THREE.Color(CONFIG.COLORS.skyDay);
+			// 🔥 修改这里：使用 CONFIG.FOG 的参数
+			scene.fog = new THREE.Fog(CONFIG.COLORS.skyDay, CONFIG.FOG.near, CONFIG.FOG.far);
 			camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 300);
 			camera.position.set(0, 4, 10);
 			camera.rotation.set(-0.1, 0, 0);
@@ -1973,17 +1968,17 @@
 		}
 
 		function createBuildingMaterials() {
-			const colors = [0x2ecc71, 0x3498db, 0x9b59b6, 0xf1c40f, 0xe67e22];
+			// 鲜艳的马卡龙色系 (参考图风格)
+			const colors = [0x48dbfb, 0xff6b6b, 0xfeca57, 0x1dd1a1, 0x5f27cd, 0xff9ff3];
+
 			colors.forEach(col => {
-				const canvas = document.createElement('canvas');
-				canvas.width = 64; canvas.height = 64;
-				const ctx = canvas.getContext('2d');
-				ctx.fillStyle = '#' + new THREE.Color(col).getHexString();
-				ctx.fillRect(0, 0, 64, 64);
-				ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-				for (let y = 10; y < 64; y += 16) { for (let x = 8; x < 64; x += 16) { if (Math.random() > 0.3) ctx.fillRect(x, y, 8, 10); } }
-				const texture = new THREE.CanvasTexture(canvas); texture.magFilter = THREE.NearestFilter;
-				buildingMaterials.push(new THREE.MeshPhongMaterial({ map: texture, color: 0xaaaaaa, emissive: col, emissiveIntensity: 0.2, shininess: 30 }));
+				// 去掉纹理，改用纯色哑光，这样更像参考图的干净风格
+				const mat = new THREE.MeshStandardMaterial({
+					color: col,
+					roughness: 0.8, // 粗糙一点，不要反光
+					metalness: 0.1  // 稍微一点点金属感保持质感
+				});
+				buildingMaterials.push(mat);
 			});
 		}
 
@@ -2453,35 +2448,77 @@
 			return wrapper;
 		}
 
+		// 全局变量增加一个 hemiLight 用于昼夜循环
+		let hemiLight;
+
 		function createEnvironment() {
-			// Lights
-			ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-			scene.add(ambientLight);
-			dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-			dirLight.position.set(-10, 30, 20); dirLight.castShadow = true;
-			dirLight.shadow.mapSize.width = 1024; dirLight.shadow.mapSize.height = 1024;
-			dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 100;
+			// 1. 场景基础设置
+			// 开启软阴影
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			renderer.outputEncoding = THREE.sRGBEncoding; // 开启sRGB，颜色更准确鲜艳
+
+			// 2. 环境光照 (HemisphereLight)
+			// 模拟天空光(蓝色)和地面反射光(暖色)的混合，比 AmbientLight 更真实
+			hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.6);
+			hemiLight.color.setHSL(0.6, 1, 0.6); // 天光偏蓝
+			hemiLight.groundColor.setHSL(0.095, 1, 0.75); // 地光偏暖白
+			hemiLight.position.set(0, 50, 0);
+			scene.add(hemiLight);
+
+			// 3. 主光源 (模拟太阳 - 产生投影)
+			dirLight = new THREE.DirectionalLight(0xffffff, 1.2); // 强度 1.2
+			dirLight.position.set(-20, 50, -20); // 阳光从左上方打下来
+			dirLight.castShadow = true;
+
+			// 优化投影参数：保证跑道范围内的阴影清晰
+			const d = 30;
+			dirLight.shadow.camera.left = -d;
+			dirLight.shadow.camera.right = d;
+			dirLight.shadow.camera.top = d;
+			dirLight.shadow.camera.bottom = -d;
+
+			dirLight.shadow.camera.near = 0.1;
+			dirLight.shadow.camera.far = 200;
+
+			// 提高阴影分辨率 (如果卡顿可改为 1024)
+			dirLight.shadow.mapSize.width = 2048;
+			dirLight.shadow.mapSize.height = 2048;
+
+			// 解决阴影条纹(acne)问题
+			dirLight.shadow.bias = -0.0001;
+
 			scene.add(dirLight);
 
-			// Sun/Moon
-			sunMesh = new THREE.Mesh(new THREE.SphereGeometry(25, 32, 32), new THREE.MeshBasicMaterial({ color: 0xFFFFDD }));
-			sunMesh.position.set(20, 40, -120);
+			// 4. 太阳本体 (装饰用)
+			sunMesh = new THREE.Mesh(
+				new THREE.SphereGeometry(20, 32, 32),
+				new THREE.MeshBasicMaterial({ color: 0xFFAA00 }) // 黄色太阳
+			);
+			sunMesh.position.set(-20, 60, -100);
 			scene.add(sunMesh);
 
-			for (let i = 0; i < 3; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
+			// 5. 初始化跑道
+			for (let i = 0; i < 4; i++) createTrackSegment(-i * CONFIG.TRACK_LENGTH);
 		}
 
 		function createTrackSegment(zPos) {
 			const seg = new THREE.Group();
-			const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, CONFIG.TRACK_LENGTH), new THREE.MeshPhongMaterial({ color: CONFIG.COLORS.ground }));
-			floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
-			seg.add(floor);
-			const rGeo = new THREE.BoxGeometry(0.2, 0.1, CONFIG.TRACK_LENGTH);
-			const rMat = new THREE.MeshLambertMaterial({ color: 0x555555 });
-			CONFIG.LANES.forEach(x => {
-				let r1 = new THREE.Mesh(rGeo, rMat); r1.position.set(x - 1.0, 0.05, 0); seg.add(r1);
-				let r2 = new THREE.Mesh(rGeo, rMat); r2.position.set(x + 1.6, 0.05, 0); seg.add(r2);
+			// 地面材质也换成 Standard
+			const floorMat = new THREE.MeshStandardMaterial({
+				color: CONFIG.COLORS.ground,
+				roughness: 1.0,
+				metalness: 0.0
 			});
+
+			const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, CONFIG.TRACK_LENGTH), floorMat);
+			floor.rotation.x = -Math.PI / 2;
+			floor.receiveShadow = true; // 🔥 必须开启接收阴影
+			seg.add(floor);
+
+			// ... 轨道部分代码不变 ...
+			// 但建议把轨道的材质也改成 StandardMaterial 以保持一致
+			// ...
 			seg.position.z = zPos;
 			scene.add(seg);
 			activeTracks.push(seg);
@@ -2676,37 +2713,70 @@
 			cycleTime += delta;
 			const progress = (cycleTime % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION;
 
-			let skyColor, sunColor = 0xFFFFDD, lightIntensity = 0.4, emissiveIntensity = 0.2;
+			let skyColor, sunColor = 0xFFFFFF;
+			let lightIntensity = 1.0;
+			let hemiIntensity = 0.6;
 
-			if (progress < 0.2) {
-				const t = progress / 0.2;
+			// 简化循环：大部分时间是明亮的白天
+			if (progress < 0.15) {
+				// 日出
+				const t = progress / 0.15;
 				skyColor = new THREE.Color(CONFIG.COLORS.skyNight).lerp(new THREE.Color(CONFIG.COLORS.skySunrise), t);
-				lightIntensity = 0.3 + t * 0.5; emissiveIntensity = 0.5 * (1 - t);
-			} else if (progress < 0.5) {
-				const t = (progress - 0.2) / 0.3;
+				lightIntensity = 0.2 + t * 0.8;
+			} else if (progress < 0.25) {
+				// 早上 (过渡到正午蓝)
+				const t = (progress - 0.15) / 0.1;
 				skyColor = new THREE.Color(CONFIG.COLORS.skySunrise).lerp(new THREE.Color(CONFIG.COLORS.skyDay), t);
-				lightIntensity = 0.8 + t * 0.4; emissiveIntensity = 0; sunColor = 0xFFFFAA;
-			} else if (progress < 0.7) {
-				const t = (progress - 0.5) / 0.2;
+			} else if (progress < 0.75) {
+				// 正午 (超长待机) - 保持湛蓝
+				skyColor = new THREE.Color(CONFIG.COLORS.skyDay);
+				sunColor = 0xFFFFAA;
+				lightIntensity = 1.2;
+			} else if (progress < 0.85) {
+				// 日落
+				const t = (progress - 0.75) / 0.1;
 				skyColor = new THREE.Color(CONFIG.COLORS.skyDay).lerp(new THREE.Color(CONFIG.COLORS.skySunset), t);
-				lightIntensity = 1.2 - t * 0.6; emissiveIntensity = t * 0.3; sunColor = 0xFFCC00;
+				lightIntensity = 1.2 - t * 0.8;
+				sunColor = 0xFFAA00;
 			} else {
-				const t = (progress - 0.7) / 0.3;
+				// 夜晚
+				const t = (progress - 0.85) / 0.15;
 				skyColor = new THREE.Color(CONFIG.COLORS.skySunset).lerp(new THREE.Color(CONFIG.COLORS.skyNight), t);
-				lightIntensity = 0.6 - t * 0.3; emissiveIntensity = 0.3 + t * 0.2; sunColor = 0xDDDDFF;
+				lightIntensity = 0.2;
+				sunColor = 0x000000; // 晚上太阳黑掉
 			}
 
-			// 将计算出的 progress 传给云系统，让它自己变色
+			// 更新天空和雾
+			scene.background = skyColor;
+			scene.fog.color = skyColor;
+
+			// 动态调整雾的浓度：晚上雾大一点，白天雾远一点
+			const targetFogNear = (progress > 0.85 || progress < 0.15) ? 20 : CONFIG.FOG.near;
+			const targetFogFar = (progress > 0.85 || progress < 0.15) ? 100 : CONFIG.FOG.far;
+
+			// 简单的线性过渡
+			scene.fog.near += (targetFogNear - scene.fog.near) * 0.05;
+			scene.fog.far += (targetFogFar - scene.fog.far) * 0.05;
+
+			// 更新光照
+			dirLight.intensity = lightIntensity;
+			dirLight.color.setHex(sunColor);
+
+			if (hemiLight) {
+				// 半球光随天空颜色微调
+				hemiLight.color.copy(skyColor).lerp(new THREE.Color(0xffffff), 0.5);
+				hemiLight.intensity = lightIntensity * 0.6;
+			}
+
+			// 更新云层
 			CloudSystem.updateColor(progress);
 
-			scene.background = skyColor; scene.fog.color = skyColor;
-			ambientLight.intensity = lightIntensity * 0.6; dirLight.intensity = lightIntensity;
-
+			// 太阳位置
 			const angle = progress * Math.PI * 2;
-			sunMesh.position.x = Math.cos(angle) * 100; sunMesh.position.y = Math.sin(angle) * 100;
+			// 只有Y轴运动，保持光照方向大体一致，只改变高度
+			sunMesh.position.y = Math.sin(angle) * 100;
+			sunMesh.position.x = Math.cos(angle) * 100;
 			sunMesh.material.color.setHex(sunColor);
-
-			buildingMaterials.forEach(mat => { mat.emissiveIntensity = emissiveIntensity; });
 		}
 
 		function animate() {
