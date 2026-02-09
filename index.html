@@ -798,16 +798,14 @@
 					PLAY</button>
 				<button id="store-btn" class="btn-3d store-btn-style" onclick="Store.show(event)">SUPPLY
 					STORE</button>
-				<button id="char-btn" class="btn-3d char-btn-style"
-					onclick="CharSys.show(event)">CHARACTERS</button>
+				<button id="char-btn" class="btn-3d char-btn-style" onclick="CharSys.show(event)">CHARACTERS</button>
 				<button id="rank-btn" class="btn-3d rank-btn-style"
 					onclick="Leaderboard.show(event)">LEADERBOARD</button>
 			</div>
 
 			<div id="controls-hint">
 				<div class="control-row">
-					<div><span class="key-cap key-move">←</span> <span
-							class="key-cap key-move">→</span></div>
+					<div><span class="key-cap key-move">←</span> <span class="key-cap key-move">→</span></div>
 					<span class="control-label">MOVE</span>
 				</div>
 				<div class="control-row">
@@ -824,8 +822,7 @@
 		<div id="pause-screen" class="menu-screen hidden">
 			<div class="pause-container">
 				<div id="pause-title" class="pause-title">PAUSED</div>
-				<button id="resume-btn" class="btn-3d resume-btn-style"
-					onclick="togglePause(event)">RESUME</button>
+				<button id="resume-btn" class="btn-3d resume-btn-style" onclick="togglePause(event)">RESUME</button>
 				<button id="pause-home-btn" class="btn-3d lb-close-btn" onclick="goHome(event)">MAIN
 					MENU</button>
 			</div>
@@ -834,8 +831,7 @@
 		<div id="store-screen" class="menu-screen hidden">
 			<div class="store-container">
 				<div class="store-header">
-					<div class="game-title"
-						style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY
+					<div class="game-title" style="font-size:30px; margin:0; transform:none; animation:none;">SUPPLY
 						STORE</div>
 					<div class="store-balance">
 						<div class="css-coin" style="width:25px; height:25px;"></div>
@@ -855,8 +851,7 @@
 						</button>
 						<div class="toggle-container">
 							<label class="switch">
-								<input type="checkbox" id="check-mag"
-									onchange="Store.toggle('magnet')">
+								<input type="checkbox" id="check-mag" onchange="Store.toggle('magnet')">
 								<span class="slider"></span>
 							</label>
 							<span id="auto-use-mag">Auto-Use</span>
@@ -874,8 +869,7 @@
 						</button>
 						<div class="toggle-container">
 							<label class="switch">
-								<input type="checkbox" id="check-jet"
-									onchange="Store.toggle('jetpack')">
+								<input type="checkbox" id="check-jet" onchange="Store.toggle('jetpack')">
 								<span class="slider"></span>
 							</label>
 							<span id="auto-use-jet">Auto-Use</span>
@@ -883,8 +877,7 @@
 					</div>
 				</div>
 				<button id="store-close-btn" class="btn-3d lb-close-btn"
-					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
-					onclick="closeStore(event)">BACK</button>
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="closeStore(event)">BACK</button>
 			</div>
 		</div>
 
@@ -902,8 +895,7 @@
 				<div id="char-grid" class="store-grid">
 				</div>
 				<button id="char-close-btn" class="btn-3d lb-close-btn"
-					style="background:#3498db; box-shadow:0 5px 0 #2980b9;"
-					onclick="CharSys.close(event)">BACK</button>
+					style="background:#3498db; box-shadow:0 5px 0 #2980b9;" onclick="CharSys.close(event)">BACK</button>
 			</div>
 		</div>
 
@@ -922,19 +914,19 @@
 
 		<div id="leaderboard-screen" class="menu-screen hidden">
 			<div class="leaderboard-container">
-				<div id="lb-title-text" class="game-title"
-					style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS</div>
+				<div id="lb-title-text" class="game-title" style="font-size: 32px; margin-bottom: 20px;">TOP RUNNERS
+				</div>
 				<table class="lb-table">
 					<thead>
 						<tr>
 							<th id="th-rank">RANK</th>
-							<th id="th-name" onclick="Leaderboard.sort('name')">NAME <span
-									id="sort-name" class="sort-icon"></span></th>
+							<th id="th-name" onclick="Leaderboard.sort('name')">NAME <span id="sort-name"
+									class="sort-icon"></span></th>
 							<th id="th-score" onclick="Leaderboard.sort('score')">SCORE
 								<span id="sort-score" class="sort-icon">▼</span>
 							</th>
-							<th id="th-time" onclick="Leaderboard.sort('time')">TIME <span
-									id="sort-time" class="sort-icon"></span></th>
+							<th id="th-time" onclick="Leaderboard.sort('time')">TIME <span id="sort-time"
+									class="sort-icon"></span></th>
 						</tr>
 					</thead>
 					<tbody id="lb-body"></tbody>
