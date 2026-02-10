@@ -1,0 +1,26 @@
+{
+	"name": "moon-chaser-v3",
+	"version": "1.0.0",
+	"description": "> **\"在异星的苍穹下飞奔，在悬浮的土星环映照中起舞。突破重力，追逐月光。\"**\r > **\"Dash beneath alien skies, dance in the glow of Saturn's rings. Defy gravity, chase the moon.\"**",
+	"main": "index.js",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/TheLostRiver/FreeRun-MoonChaser.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"type": "commonjs",
+	"bugs": {
+		"url": "https://github.com/TheLostRiver/FreeRun-MoonChaser/issues"
+	},
+	"homepage": "https://github.com/TheLostRiver/FreeRun-MoonChaser#readme",
+	"devDependencies": {
+		"three": "^0.182.0",
+		"vite": "^7.3.1"
+	}
+}
