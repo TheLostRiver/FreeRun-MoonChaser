@@ -3248,7 +3248,7 @@
 		function checkCollisions() {
 			// 获取玩家包围盒
 			const pBox = new THREE.Box3().setFromObject(player);
-			// 稍微缩小一点玩家的判定范围，避免蹭到空气墙
+			// 稍微缩小判定范围
 			pBox.min.x += 0.3; pBox.max.x -= 0.3;
 			pBox.min.z += 0.2; pBox.max.z -= 0.2;
 
@@ -3258,56 +3258,47 @@
 			if (!jetpackActive) {
 				for (let i = activeObstacles.length - 1; i >= 0; i--) {
 					const obs = activeObstacles[i];
-
-					// 获取障碍物包围盒
 					const obsBox = new THREE.Box3().setFromObject(obs);
 
 					// 碰撞发生！
 					if (pBox.intersectsBox(obsBox)) {
 
-						// 滑铲穿过高架路障
+						// A. 滑铲穿过高架路障 (保持不变)
 						if (isSliding && obs.userData.isHigh) continue;
 
+						// B. 火车碰撞逻辑 (核心修复)
 						const isHeavy = obs.userData.isObstacle === true;
 
 						if (isHeavy) {
-							// === 修复的核心逻辑 START ===
-
-							// 火车顶部高度 (Body Y=2.25, Height=3.5 -> Top=4.0)
-							// 我们给 4.0 一个稍微宽松的判定线
+							// 火车顶部高度
 							const trainTopY = 4.0;
-
-							// 判定豁免条件：
-							// 1. 必须是下落状态 (verticalVelocity <= 0) 或者是跑动状态 (0)
-							// 2. 玩家脚底高度 > 火车中心高度 (2.25)。
-							//    注意：这里不要用 trainTopY(4.0) 去比，因为你可能已经陷进去了一点点。
-							//    只要你在火车“腰部”以上，且正在往下落，我们就认为你是想踩上去。
+							// 判定阈值：只要玩家脚底在火车“腰部”以上，就算安全区域
 							const toleranceThreshold = 2.5;
 
-							if (verticalVelocity <= 0 && playerBottomY > toleranceThreshold) {
-								// 【判定为着陆！】
+							if (playerBottomY > toleranceThreshold) {
+								// 🔥🔥🔥 核心修复逻辑 🔥🔥🔥
 
-								// 1. 强制修正位置：把玩家从火车身体里“提”出来，放到车顶
-								player.position.y = trainTopY;
+								// 情况1：下落或跑动中 -> 吸附到车顶
+								if (verticalVelocity <= 0) {
+									player.position.y = trainTopY;
+									verticalVelocity = 0;
+									isJumping = false;
+									onTrain = true;
+									currentGroundY = trainTopY;
+								}
 
-								// 2. 物理状态重置
-								verticalVelocity = 0;
-								isJumping = false;
-								onTrain = true;
+								// 情况2：正在向上起跳 (verticalVelocity > 0)
+								// 此时我们什么都不做，直接 continue。
+								// 意思是："虽然判定盒接触了，但玩家在上面飞，别杀他，让他飞。"
 
-								// 3. 更新全局地面高度，防止下一帧掉下去
-								currentGroundY = trainTopY;
-
-								// 4. 跳过死亡判定
-								continue;
+								continue; // 跳过死亡判定
 							}
-							// === 修复的核心逻辑 END ===
 
-							// 如果不满足上述条件，那就是撞到了侧面或底部 -> 死亡
+							// 如果高度不够(撞到了车头或侧面)，那就真的死定了
 							gameOver();
 							return;
 						} else {
-							// 撞小障碍 (逻辑不变)
+							// C. 撞小障碍 (保持不变)
 							if (isInvincible) {
 								smashObstacle(obs, i);
 							} else if (hasShield) {
