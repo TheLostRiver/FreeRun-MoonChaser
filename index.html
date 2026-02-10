@@ -1,17 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Moon Chaser V3 (Refactor)</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
-    </style>
+    <title>Moon Chaser V3</title>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div id="game-container"></div>
 
+    <div id="ui-layer">
+        <div id="score-display" class="hud-item">
+            DISTANCE: <span id="score-val" style="margin-left:10px">0</span>m
+        </div>
+
+        <div id="coin-display" class="hud-item">
+            <div class="icon-coin"></div>
+            <span id="coin-val">0</span>
+        </div>
+
+        <div id="game-over-screen">
+            <h1>CRASHED!</h1>
+            <div class="stat-row">
+                Score: <span id="final-score" style="color:#4faaf0; margin-left:10px">0</span>m
+            </div>
+            <div class="stat-row">
+                <div class="icon-coin"></div>
+                <span id="final-coins" style="color:#FFD700; margin-left:10px">0</span>
+            </div>
+            <button id="restart-btn">Try Again</button>
+        </div>
+
+        <div id="start-screen">
+            <h1>MOON CHASER</h1>
+            <p>Press <span style="color:#4faaf0">SPACE</span> or <span style="color:#4faaf0">CLICK</span> to Start</p>
+        </div>
+    </div>
+
     <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

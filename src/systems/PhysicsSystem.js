@@ -63,6 +63,9 @@ export class PhysicsSystem {
                         const dz = Math.abs(player.mesh.position.z - coin.mesh.position.z);
 
                         if (dx < 1.0 && dz < 1.0) {
+
+                                // 发射事件 💰 吃到金币了！
+                                Events.emit('COIN_COLLECTED');
                                 // 💰 吃到金币了！
                                 console.log("DING! Coin Collected!");
 
