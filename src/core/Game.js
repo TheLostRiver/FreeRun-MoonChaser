@@ -1,12 +1,10 @@
 import * as THREE from 'three';
-import Events from './Events.js';
-// 🔥  引入新模块
 import { Config } from '../data/Config.js';
 import { Player } from '../entities/Player.js';
-// 🔥  引入 InputSystem
 import { InputSystem } from '../systems/InputSystem.js';
-// 🔥  引入 WorldSystem
 import { WorldSystem } from '../systems/WorldSystem.js';
+import { PhysicsSystem } from '../systems/PhysicsSystem.js';
+import Events from './Events.js';
 
 export class Game {
 	static instance;
@@ -18,7 +16,7 @@ export class Game {
 		this.initThree();
 		this.initEvents();
 
-		// 🔥 2. 初始化世界内容
+		// 初始化世界内容
 		this.initWorld();
 
 		this.clock = new THREE.Clock();
@@ -59,10 +57,21 @@ export class Game {
 	}
 
 	initWorld() {
-		// 🔥 2. 先初始化世界，再初始化玩家
+		// 先初始化世界，再初始化玩家
 		this.worldSystem = new WorldSystem(this);
-		// 🔥 3. 创建主角
+		// 创建主角
 		this.player = new Player(this);
+
+		// 初始化物理系统
+		this.physicsSystem = new PhysicsSystem(this);
+
+		this.gameOver = false; // 游戏状态标记
+
+		// 监听死亡
+		Events.on('GAME_OVER', () => {
+			this.gameOver = true;
+			alert("GAME OVER! Refresh to restart."); // 暂时用 alert 顶替
+		});
 	}
 
 	initEvents() { }
@@ -74,11 +83,13 @@ export class Game {
 	}
 
 	update(delta) {
-		// 🔥 4. 更新主角逻辑
+		if (this.gameOver) return; // 如果死了，停止更新逻辑
+
+		// 更新主角逻辑
 		if (this.player) {
 			this.player.update(delta);
 
-			// 🔥 3. 相机跟随逻辑
+			// 相机跟随逻辑
 			// 相机保持在玩家身后上方 (Z+10, Y+5)
 			// 我们只跟 Z 轴 (前进) 和 X 轴 (一点点平滑跟随，增加动感)
 			const targetZ = this.player.mesh.position.z + 10;
@@ -87,9 +98,14 @@ export class Game {
 			this.camera.position.z = targetZ;
 			this.camera.position.x += (targetX - this.camera.position.x) * 5 * delta; // 平滑插值
 
-			// 🔥 4. 更新世界 (生成跑道)
+			// 更新世界 (生成跑道)
 			if (this.worldSystem) {
 				this.worldSystem.update(delta);
+			}
+
+			// 每帧进行物理检测
+			if (this.physicsSystem) {
+				this.physicsSystem.update(delta);
 			}
 		}
 	}
@@ -102,7 +118,7 @@ export class Game {
 	}
 
 	initEvents() {
-		// 🔥 2. 启动输入系统
+		// 启动输入系统
 		this.inputSystem = new InputSystem();
 	}
 }

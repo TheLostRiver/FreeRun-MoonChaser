@@ -53,6 +53,20 @@ export class Player {
                 Events.on('INPUT_JUMP', () => this.jump());
         }
 
+        // 🔥 新增：获取玩家碰撞盒 (带一点容错)
+        getBoundingBox() {
+                const box = new THREE.Box3().setFromObject(this.mesh);
+                // 收缩一点点，避免“空气撞墙”让玩家觉得冤枉
+                box.expandByScalar(-0.2);
+                return box;
+        }
+
+        // 🔥 新增：处理碰撞反馈
+        onCrash() {
+                // 以后可以在这里播放死亡动画
+                this.mesh.visible = false;
+        }
+
         moveLane(direction) {
                 // 计算新车道索引 (限制在 0 ~ 2 之间)
                 const newLane = this.laneIndex + direction;
