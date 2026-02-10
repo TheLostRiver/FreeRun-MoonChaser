@@ -57,7 +57,12 @@ export class Player {
         getBoundingBox() {
                 const box = new THREE.Box3().setFromObject(this.mesh);
                 // 收缩一点点，避免“空气撞墙”让玩家觉得冤枉
-                box.expandByScalar(-0.2);
+                //box.expandByScalar(-0.2);
+
+                // 只缩 0.1，给 Z 轴留点厚度
+                box.min.x += 0.2; box.max.x -= 0.2;
+                box.min.z += 0.1; box.max.z -= 0.1;
+
                 return box;
         }
 
@@ -87,30 +92,31 @@ export class Player {
         update(delta) {
                 if (!this.mesh) return;
 
-                // 🔥 1. 让主角往前跑！(Z轴负方向)
+                // 让主角往前跑！(Z轴负方向)
                 // 以后这个速度会随着时间变快，现在先读配置
                 const speed = Config.PLAYER_SPEED_BASE;
                 this.mesh.position.z -= speed * delta;
 
-                // 1. 水平移动 (使用 Lerp 插值实现平滑滑动)
+                // 水平移动 (使用 Lerp 插值实现平滑滑动)
                 // 这里的 10 是平滑速度，越大越快
                 this.mesh.position.x += (this.targetX - this.mesh.position.x) * 10 * delta;
 
-                // 2. 垂直移动 (重力模拟)
+                // 垂直移动 (重力模拟)
                 this.mesh.position.y += this.verticalVelocity;
 
-                // 简单的地面碰撞检测
-                if (this.mesh.position.y > this.groundY) {
-                        // 在空中：应用重力
+                // 核心修改：不要用严格的 > groundY
+                // 只要在地面上方 0.1 米以内，都算“贴地”
+                if (this.mesh.position.y > this.groundY + 0.1) {
+                        // 只有真的飞得比 0.1 高，才算在空中
                         this.verticalVelocity -= Config.GRAVITY;
                 } else {
-                        // 落地
+                        // 吸附到地面
                         this.mesh.position.y = this.groundY;
                         this.verticalVelocity = 0;
                         this.isJumping = false;
                 }
 
-                // 3. 简单的倾斜动画 (根据移动方向倾斜身体)
+                // 简单的倾斜动画 (根据移动方向倾斜身体)
                 const xDiff = this.targetX - this.mesh.position.x;
                 this.mesh.rotation.z = -xDiff * 0.1; // 往左移时身体往左倾
                 this.mesh.rotation.x = this.isJumping ? -0.2 : 0; // 跳跃时前倾

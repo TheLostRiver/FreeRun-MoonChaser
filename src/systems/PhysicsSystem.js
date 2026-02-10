@@ -15,12 +15,21 @@ export class PhysicsSystem {
                 const playerBox = player.getBoundingBox();
                 const playerBottomY = player.mesh.position.y;
 
+                // 标记：这一帧是否找到了立足点？
+                let foundSupport = false;
+
                 for (const obs of obstacles) {
                         // 获取障碍物包围盒
                         this.tempBox.setFromObject(obs.mesh);
 
+                        // 增加“吸附容差”
+                        // 因为玩家模型脚底有空隙，我们把障碍物的判定盒往上“虚高” 0.5 米
+                        // 这样玩家只要悬浮在火车上方 0.5 米内，就会被判定为“踩到了”
+                        const hitBox = this.tempBox.clone();
+                        hitBox.max.y += 0.5;
+
                         // 1. 简单的 AABB 碰撞检测 (轴对齐包围盒)
-                        if (playerBox.intersectsBox(this.tempBox)) {
+                        if (playerBox.intersectsBox(hitBox)) {
 
                                 // 💥 发生了碰撞！接下来判断是“死”还是“活”
 
@@ -33,20 +42,29 @@ export class PhysicsSystem {
                                         if (playerBottomY > tolerance) {
                                                 // 且正在下落，修正位置到车顶
                                                 if (player.verticalVelocity <= 0) {
-                                                        player.mesh.position.y = trainTopY;
-                                                        player.verticalVelocity = 0;
-                                                        player.isJumping = false;
-                                                        player.groundY = trainTopY; // 🔥 临时把地面抬高
+
+                                                        // 告诉玩家：现在的地面变高了
+                                                        // 简化：只设置数据，不强制改位置
+                                                        // 因为 Player.js 现在有了 +0.1 的吸附逻辑，
+                                                        // 只要 groundY 设对了，Player 会自己吸附过去，非常平滑
+                                                        player.groundY = trainTopY;
+
+
+                                                        // 标记找到了立足点 踩到东西了！
+                                                        foundSupport = true;
                                                 }
                                                 // 如果是在上升(verticalVelocity > 0)，就让他飞，不算撞
                                                 continue;
                                         }
                                 }
 
-                                // B. 死亡判定
-                                // 如果没触发上面的“车顶幸存逻辑”，那就是真撞了
-                                this.handleCollision();
-                                return; // 撞一个就死，不用看后面的了
+                                // 死亡判定
+                                // 注意：死亡判定还是要用原始的 box，不然离老远就撞死了
+                                // 所以这里我们重新检测一下原始 box
+                                if (playerBox.intersectsBox(this.tempBox)) {
+                                        this.handleCollision();
+                                        return;
+                                }
                         }
                 }
 
@@ -81,12 +99,10 @@ export class PhysicsSystem {
                         }
                 }
 
-                // C. 落地重置
-                // 如果玩家离开了火车顶（比如跑过了火车），要掉回地面
-                // 简单的判定：如果没有在任何障碍物上方，且 groundY 是车顶高度
-                if (player.groundY > 0 && !player.isJumping) {
-                        // 这里为了简化，我们暂时让它下一帧自动受重力影响掉下去
-                        // 只要重置地面高度为 0
+                // 落地重置 (修复版)
+                // 只有当：玩家不在空中跳跃 且 这一帧没有踩到任何东西
+                // 才能把地面设回 0
+                if (!player.isJumping && !foundSupport) {
                         player.groundY = 0;
                 }
         }

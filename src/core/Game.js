@@ -119,11 +119,17 @@ export class Game {
 		});
 
 		// 监听死亡事件
-		Events.on('GAME_OVER_UI', () => {
+		Events.on('GAME_OVER', () => {
+			if (this.isGameOver) return; // 防止重复触发
+
 			this.isGameOver = true;
 			this.isGameActive = false; // 停止跑动
+
+			// 播放音效
+			this.audioSystem.playCrash();
+
 			// 把最终数据传给 UI
-			Events.emit('GAME_OVER', { score: this.score, coins: this.coins });
+			Events.emit('GAME_OVER_UI', { score: this.score, coins: this.coins });
 		});
 	}
 
